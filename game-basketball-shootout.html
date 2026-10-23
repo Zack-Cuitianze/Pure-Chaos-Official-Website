@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shootout — Basketball — Pure Chaos</title>
+<meta name="description" content="Pure Chaos — Basketball shootout. Ten shots, flick to shoot.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-title" content="Pure Chaos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/vt323.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/games.css">
+</head>
+<body class="arcade">
+
+<div class="ambient" aria-hidden="true"></div>
+
+<header class="nav" role="banner">
+  <div class="nav__inner">
+    <a class="brand" href="index.html" aria-label="Pure Chaos — home">
+      <img class="brand__mark" src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a class="glass-btn" href="brands.html"><span>brands</span></a>
+      <a class="glass-btn" href="about.html"><span>about us</span></a>
+      <a class="glass-btn" href="articles.html"><span>articles</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="play play--shootout">
+  <a class="crumbs" href="game-basketball.html">&lt;- BASKETBALL</a>
+  <h1 class="play__title">SHOOTOUT</h1>
+  <p class="play__prompt play__prompt--blink" id="hoopPrompt">DRAG BALL · RELEASE TO SHOOT</p>
+
+  <div class="hud">
+    <div class="hud__box"><div class="hud__label">SCORE</div><div class="hud__val" id="hoopScore">0/10</div></div>
+    <div class="hud__box"><div class="hud__label">STREAK</div><div class="hud__val" id="hoopStreak">0</div></div>
+    <div class="hud__box"><div class="hud__label">BEST</div><div class="hud__val" id="hoopBest">0/10</div></div>
+  </div>
+
+  <div class="pixel-frame">
+    <canvas id="hoopCv" width="420" height="620" aria-label="Basketball game"></canvas>
+    <div class="overlay" id="hoopOverlay" role="dialog" aria-modal="true" aria-labelledby="hoopOvTitle" hidden>
+      <div>
+        <p class="overlay__title" id="hoopOvTitle">FULL TIME</p>
+        <p class="overlay__sub" id="hoopOvSub"></p>
+        <div class="overlay__row">
+          <button class="btn-pixel" id="hoopAgain" type="button">SHOOT AGAIN</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay__row overlay__row--standalone">
+    <button class="btn-pixel btn-pixel--ghost" id="hoopReset" type="button">RESTART</button>
+  </div>
+
+  <p class="hint">PULL BACK TO AIM · DOTTED LINE SHOWS FLIGHT<br>SWISH = +1 · 10 SHOTS PER GAME</p>
+</main>
+<footer class="footer" role="contentinfo">
+  <div class="footer__inner">
+    <a class="footer__brand" href="index.html" aria-label="Pure Chaos — home">
+      <img src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="footer__cols" aria-label="Footer">
+      <ul class="footer__col">
+        <li><a href="#">Privacy policies</a></li>
+        <li><a href="#">Do not share my personal data</a></li>
+        <li><a href="#">Collaborations</a></li>
+        <li><a href="#">We care about your well-being</a></li>
+        <li><a href="#">Cookies</a></li>
+        <li><a href="#">Terms of use</a></li>
+        <li><a href="#">Sitemap</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Contact us</a></li>
+      </ul>
+      <ul class="footer__col">
+        <li><a href="#">Assets free for downloading</a></li>
+        <li><a href="#">Members of the club</a></li>
+        <li><a href="#">External links</a></li>
+        <li><a href="#">Contributors</a></li>
+      </ul>
+    </nav>
+    <a class="footer__game" href="games.html"><span class="game__fx" aria-hidden="true"><span class="game__invader"></span><span class="game__coin">INSERT COIN</span></span><span class="game__label">Game center <span class="game__arrow">-&gt;</span></span></a>
+  </div>
+</footer>
+
+<script src="assets/dialogs.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const cv = document.getElementById('hoopCv');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+
+  const elScore = document.getElementById('hoopScore');
+  const elStreak = document.getElementById('hoopStreak');
+  const elBest = document.getElementById('hoopBest');
+  const overlay = document.getElementById('hoopOverlay');
+  const ovSub = document.getElementById('hoopOvSub');
+  const prompt = document.getElementById('hoopPrompt');
+
+  const KEY = 'pc_hoops_best';
+  let best = 0;
+  try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
+  elBest.textContent = best + '/10';
+
+  // The rim sits 327 px above the launch point. With the old G = 0.5 the maximum
+  // reachable height was ~225 px, so a basket was mechanically impossible.
+  // G / launch velocities below were tuned by simulating every reachable drag
+  // point: ~2.6% now score, with a large contiguous aiming zone.
+  const G = 0.32;
+  const BALL_R = 15;
+  const HOME = { x: 100, y: 470 };
+  // hoop geometry
+  const RIM_Y = 218, RIM_L = 282, RIM_R = 342;
+  const BOARD_X = 352, BOARD_TOP = 140, BOARD_BOT = 250;
+  const FLOOR = H - 24;
+
+  let balls, score, streak, flying, aim, scored, shotN;
+  let finishTimer = 0;
+  const TOTAL = 10;
+
+  function reset(full) {
+    clearTimeout(finishTimer);
+    if (full) {
+      balls = TOTAL;
+      score = 0;
+      streak = 0;
+      overlay.hidden = true;
+      prompt.textContent = 'DRAG BALL · RELEASE TO SHOOT';
+      prompt.classList.add('play__prompt--blink');
+    }
+    flying = null;
+    aim = null;
+    scored = false;
+    update();
+  }
+
+  function update() {
+    elScore.textContent = score + '/' + TOTAL;
+    elStreak.textContent = streak;
+  }
+
+  function finish() {
+    if (score > best) {
+      best = score;
+      try { localStorage.setItem(KEY, String(best)); } catch (e) {}
+      elBest.textContent = best + '/10';
+    }
+    ovSub.innerHTML = 'SCORE ' + score + '/' + TOTAL + ' · BEST ' + best + '/10<br>' +
+      (score === TOTAL ? 'PERFECT — UNMATCHED' : score >= 7 ? 'SHARPSHOOTER' : score >= 4 ? 'WARMING UP' : 'BRICK CITY — RETRY?');
+    overlay.hidden = false;
+    prompt.textContent = 'FULL TIME';
+    prompt.classList.remove('play__prompt--blink');
+  }
+
+  function shoot(vx, vy) {
+    if (balls <= 0) return;
+    balls--;
+    shotN = TOTAL - balls;
+    flying = { x: HOME.x, y: HOME.y, vx: vx, vy: vy, dead: 0, life: 0 };
+    scored = false;
+    prompt.textContent = 'SHOT ' + shotN + ' OF ' + TOTAL;
+    prompt.classList.remove('play__prompt--blink');
+  }
+
+  function stepBall(b) {
+    b.vy += G;
+    b.life++;
+    b.x += b.vx;
+    b.y += b.vy;
+
+    // walls
+    if (b.x < BALL_R) { b.x = BALL_R; b.vx = Math.abs(b.vx) * 0.6; }
+    if (b.x > W - BALL_R) { b.x = W - BALL_R; b.vx = -Math.abs(b.vx) * 0.6; }
+
+    // backboard
+    if (b.x + BALL_R > BOARD_X && b.x - BALL_R < BOARD_X + 10 &&
+        b.y > BOARD_TOP && b.y < BOARD_BOT && b.vx > 0) {
+      b.x = BOARD_X - BALL_R;
+      b.vx = -b.vx * 0.62;
+      b.vx *= 0.94;
+    }
+
+    // rim points
+    for (const rp of [{ x: RIM_L, y: RIM_Y }, { x: RIM_R, y: RIM_Y }]) {
+      const dx = b.x - rp.x, dy = b.y - rp.y;
+      const d = Math.hypot(dx, dy);
+      const min = BALL_R + 4;
+      if (d < min && d > 0.01) {
+        const nx = dx / d, ny = dy / d;
+        b.x = rp.x + nx * min;
+        b.y = rp.y + ny * min;
+        const vn = b.vx * nx + b.vy * ny;
+        if (vn < 0) {
+          b.vx -= 1.62 * vn * nx;
+          b.vy -= 1.62 * vn * ny;
+          b.vx *= 0.92; b.vy *= 0.92;
+        }
+      }
+    }
+
+    // score: crossing rim plane downward inside the rim
+    if (!scored && b.vy > 0 &&
+        b.y - BALL_R < RIM_Y && b.y >= RIM_Y &&
+        b.x > RIM_L + 4 && b.x < RIM_R - 4) {
+      scored = true;
+      score++;
+      streak++;
+      update();
+    }
+
+    // floor
+    if (b.y > FLOOR - BALL_R) {
+      b.y = FLOOR - BALL_R;
+      b.vy = -b.vy * 0.55;
+      b.vx *= 0.88;
+      if (Math.abs(b.vy) < 1.2) {
+        b.dead++;
+        if (b.dead > 40 || Math.abs(b.vx) < 0.2) endShot();
+      }
+    }
+    if (b.x < -40 || b.x > W + 40 || b.y > H + 40) { endShot(); return; }
+
+    // Arcade pacing: resolve the shot once the ball is clearly done. The original
+    // rule required ~15-25 floor bounces (10-20 s) before the next shot was allowed.
+    if (b.life >= 210 || (b.life >= 95 && Math.abs(b.vy) < 1.8 && Math.abs(b.vx) < 1.8)) endShot();
+  }
+
+  function endShot() {
+    if (!flying) return;                       // already resolved (idempotent)
+    if (!scored) streak = 0;
+    flying = null;
+    update();
+    if (balls <= 0) {
+      // cancellable: restarting within 350 ms must not resurrect the FULL TIME card
+      finishTimer = setTimeout(() => {
+        if (!flying && balls <= 0) finish();
+      }, 350);
+    } else {
+      prompt.textContent = 'SHOT ' + (TOTAL - balls + 1) + ' OF ' + TOTAL;
+    }
+  }
+
+  function drawBall(x, y) {
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(Math.round(x), Math.round(y), BALL_R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#0b0b10';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x - BALL_R, y); ctx.lineTo(x + BALL_R, y);
+    ctx.moveTo(x, y - BALL_R); ctx.lineTo(x, y + BALL_R);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(Math.round(x), Math.round(y), BALL_R - 5, 0.4, 2.2);
+    ctx.stroke();
+  }
+
+  function draw() {
+    ctx.fillStyle = '#0b0b10';
+    ctx.fillRect(0, 0, W, H);
+
+    // floor + arena pixels
+    ctx.fillStyle = '#1d1d24';
+    ctx.fillRect(0, FLOOR, W, H - FLOOR);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    for (let x = 8; x < W; x += 32) ctx.fillRect(x, FLOOR + 8, 12, 3);
+
+    // backboard + rim + net
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(BOARD_X, BOARD_TOP, 8, BOARD_BOT - BOARD_TOP);
+    ctx.fillRect(BOARD_X - 4, BOARD_TOP - 8, 16, 8);
+    ctx.fillStyle = '#c9c9d2';
+    ctx.fillRect(RIM_L - 4, RIM_Y - 3, (RIM_R - RIM_L) + 8, 6);
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i <= 6; i++) {
+      const t = i / 6;
+      const x = RIM_L + 6 + t * ((RIM_R - RIM_L) - 12);
+      ctx.moveTo(RIM_L + (i / 6) * (RIM_R - RIM_L), RIM_Y + 3);
+      ctx.lineTo(x, RIM_Y + 44);
+    }
+    ctx.stroke();
+
+    // shot counter pips
+    for (let i = 0; i < TOTAL; i++) {
+      ctx.fillStyle = i < balls ? '#fff' : 'rgba(255,255,255,0.18)';
+      ctx.fillRect(14 + i * 20, 14, 12, 12);
+    }
+
+    // aim preview
+    if (aim) {
+      let sx = HOME.x, sy = HOME.y, svx = aim.vx, svy = aim.vy;
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      for (let i = 0; i < 34; i++) {
+        svy += G;
+        sx += svx; sy += svy;
+        if (i % 2 === 0) ctx.fillRect(Math.round(sx) - 2, Math.round(sy) - 2, 4, 4);
+      }
+      // slingshot line
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(HOME.x, HOME.y);
+      ctx.lineTo(aim.cx, aim.cy);
+      ctx.stroke();
+    }
+
+    // ground shadow so the raised launch point reads correctly
+    if (!flying && balls > 0) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.10)';
+      ctx.fillRect(HOME.x - 20, FLOOR - 4, 40, 5);
+    }
+    if (!flying && balls > 0) drawBall(HOME.x, HOME.y);
+    if (flying) drawBall(flying.x, flying.y);
+  }
+
+  function loop() {
+    requestAnimationFrame(loop);
+    if (flying && overlay.hidden) stepBall(flying);
+    draw();
+  }
+
+  // input: press near ball, drag to aim, release to shoot
+  function pos(e) {
+    const r = cv.getBoundingClientRect();
+    return {
+      x: (e.clientX - r.left) * (W / r.width),
+      y: (e.clientY - r.top) * (H / r.height)
+    };
+  }
+  let dragging = false;
+  cv.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;               // right / middle click must not start an aim
+    if (flying || balls <= 0 || !overlay.hidden) return;
+    const p = pos(e);
+    if (Math.hypot(p.x - HOME.x, p.y - HOME.y) < 70) {
+      dragging = true;
+      cv.setPointerCapture(e.pointerId);
+      aim = { vx: 0, vy: 0, cx: p.x, cy: p.y };
+    }
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const p = pos(e);
+    let vx = (HOME.x - p.x) * 0.36;
+    let vy = (HOME.y - p.y) * 0.36;
+    const m = Math.hypot(vx, vy);
+    const max = 17;
+    if (m > max) { vx = vx / m * max; vy = vy / m * max; }
+    aim = { vx: vx, vy: vy, cx: p.x, cy: p.y };
+  });
+  function release() {
+    if (!dragging) return;
+    dragging = false;
+    if (aim && Math.hypot(aim.vx, aim.vy) > 1.4) shoot(aim.vx, aim.vy);
+    aim = null;
+  }
+  cv.addEventListener('pointerup', release);
+  cv.addEventListener('pointercancel', () => { dragging = false; aim = null; });
+
+  document.getElementById('hoopAgain').addEventListener('click', () => reset(true));
+  document.getElementById('hoopReset').addEventListener('click', () => reset(true));
+
+  reset(true);
+  loop();
+})();
+</script>
+
+</body>
+</html>

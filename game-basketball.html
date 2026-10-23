@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Basketball — Game Center</title>
+<meta name="description" content="Pure Chaos — Basketball. Three games on one court: shootout, one-on-one and a full playoff season.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-title" content="Pure Chaos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/vt323.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/games.css">
+</head>
+<body class="arcade">
+
+<header class="nav" role="banner">
+  <div class="nav__inner">
+
+    <a class="brand" href="index.html" aria-label="Pure Chaos — home">
+      <img class="brand__mark" src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+
+    <nav class="nav__links" aria-label="Primary">
+      <a class="glass-btn" href="brands.html"><span>brands</span></a>
+      <a class="glass-btn" href="about.html"><span>about us</span></a>
+      <a class="glass-btn" href="articles.html"><span>articles</span></a>
+    </nav>
+
+  </div>
+</header>
+
+<main class="games games--hoops">
+  <a class="crumbs" href="games.html">&lt;- GAME CENTER</a>
+  <p class="arcade-kicker">Pure Chaos // Arcade // Basketball</p>
+  <h1 class="games__title">Basketball<span class="blink-block" aria-hidden="true"></span></h1>
+  <p class="coin-line">One Court — Three Games</p>
+
+  <section class="subgame-grid" aria-label="Basketball games">
+
+    <a class="game-card" href="game-basketball-shootout.html">
+      <span class="game-card__led" aria-hidden="true"></span>
+      <span class="game-card__num">01</span>
+      <h2 class="game-card__name">Shootout</h2>
+      <p class="game-card__sub">10 shots · flick to shoot · streaks</p>
+      <span class="game-card__foot">
+        <span class="game-card__best" data-saved="shootout">HI --/10</span>
+        <span class="game-card__go">Press start</span>
+      </span>
+    </a>
+
+    <a class="game-card" href="game-basketball-1v1.html">
+      <span class="game-card__led" aria-hidden="true"></span>
+      <span class="game-card__num">02</span>
+      <h2 class="game-card__name">One-on-One</h2>
+      <p class="game-card__sub">full court · drive · ankle breakers · cpu or 2p</p>
+      <span class="game-card__foot">
+        <span class="game-card__best" data-saved="record">REC 0-0</span>
+        <span class="game-card__go">Press start</span>
+      </span>
+    </a>
+
+    <a class="game-card" href="game-basketball-1v1.html?mode=season">
+      <span class="game-card__led" aria-hidden="true"></span>
+      <span class="game-card__num">03</span>
+      <h2 class="game-card__name">Season</h2>
+      <p class="game-card__sub">8 teams · 3 rounds · final stat report</p>
+      <span class="game-card__foot">
+        <span class="game-card__best" data-saved="rings">RINGS 0</span>
+        <span class="game-card__go">Press start</span>
+      </span>
+    </a>
+
+  </section>
+
+  <p class="arcade-note">One cabinet, three modes. Hi-scores, records and rings are saved in this browser.</p>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer__inner">
+    <a class="footer__brand" href="index.html" aria-label="Pure Chaos — home">
+      <img src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="footer__cols" aria-label="Footer">
+      <ul class="footer__col">
+        <li><a href="#">Privacy policies</a></li>
+        <li><a href="#">Do not share my personal data</a></li>
+        <li><a href="#">Collaborations</a></li>
+        <li><a href="#">We care about your well-being</a></li>
+        <li><a href="#">Cookies</a></li>
+        <li><a href="#">Terms of use</a></li>
+        <li><a href="#">Sitemap</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Contact us</a></li>
+      </ul>
+      <ul class="footer__col">
+        <li><a href="#">Assets free for downloading</a></li>
+        <li><a href="#">Members of the club</a></li>
+        <li><a href="#">External links</a></li>
+        <li><a href="#">Contributors</a></li>
+      </ul>
+    </nav>
+    <a class="footer__game" href="games.html"><span class="game__fx" aria-hidden="true"><span class="game__invader"></span><span class="game__coin">INSERT COIN</span></span><span class="game__label">Game center <span class="game__arrow">-&gt;</span></span></a>
+  </div>
+</footer>
+
+<!-- saved progress loader -->
+<script>
+(() => {
+  'use strict';
+  const read = (key, fallback) => {
+    try {
+      const v = localStorage.getItem(key);
+      return v === null || v === '' ? fallback : v;
+    } catch (e) { return fallback; }
+  };
+  document.querySelectorAll('[data-saved]').forEach((el) => {
+    const kind = el.getAttribute('data-saved');
+    if (kind === 'shootout') {
+      const best = read('pc_hoops_best', null);
+      el.textContent = 'HI ' + (best === null ? '--' : best + '/10');
+    } else if (kind === 'record') {
+      el.textContent = 'REC ' + read('pc_hoops_1v1_w', '0') + '-' + read('pc_hoops_1v1_l', '0');
+    } else if (kind === 'rings') {
+      const rings = read('pc_hoops_rings', '0');
+      const best = read('pc_hoops_season_best', null);
+      el.textContent = 'RINGS ' + rings + (best === null ? '' : ' · W' + best);
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

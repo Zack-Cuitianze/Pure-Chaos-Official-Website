@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chess — Game Center</title>
+<meta name="description" content="Pure Chaos — Chess. Pick a level and a time control, then play.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-title" content="Pure Chaos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/vt323.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/games.css">
+</head>
+<body class="arcade">
+
+<div class="ambient" aria-hidden="true"></div>
+
+<header class="nav" role="banner">
+  <div class="nav__inner">
+    <a class="brand" href="index.html" aria-label="Pure Chaos — home">
+      <img class="brand__mark" src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a class="glass-btn" href="brands.html"><span>brands</span></a>
+      <a class="glass-btn" href="about.html"><span>about us</span></a>
+      <a class="glass-btn" href="articles.html"><span>articles</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="play play--chess">
+  <a class="crumbs" href="games.html">&lt;- GAME CENTER</a>
+  <h1 class="play__title">CHESS</h1>
+  <p class="play__prompt" id="chessStatus" aria-live="polite">SELECT YOUR LEVEL</p>
+
+  <!-- ============================================================
+       SETUP — level, then time control
+       ============================================================ -->
+  <section class="setup" id="setup" aria-label="Game setup">
+
+    <div class="setup__stage" data-stage="level">
+      <p class="setup__step">STEP 1 / 2 — CHOOSE YOUR OPPONENT</p>
+
+      <div class="level-grid">
+        <button class="level-card level-card--learn" type="button" data-level="learn">
+          <span class="level-card__num">01</span>
+          <span class="level-card__body">
+            <span class="level-card__name">I have no idea how to play it</span>
+            <span class="level-card__desc">A two-minute lesson on the pieces, then a gentle first game.</span>
+          </span>
+          <span class="level-card__go">LEARN</span>
+        </button>
+
+        <button class="level-card" type="button" data-level="beginner">
+          <span class="level-card__num">02</span>
+          <span class="level-card__body">
+            <span class="level-card__name">Beginner</span>
+            <span class="level-card__desc">Learns the ropes. Misses things. Very beatable.</span>
+          </span>
+          <span class="level-card__go">SELECT</span>
+        </button>
+
+        <button class="level-card" type="button" data-level="intermediate">
+          <span class="level-card__num">03</span>
+          <span class="level-card__body">
+            <span class="level-card__name">Intermediate</span>
+            <span class="level-card__desc">Takes what is offered and defends the obvious.</span>
+          </span>
+          <span class="level-card__go">SELECT</span>
+        </button>
+
+        <button class="level-card" type="button" data-level="master">
+          <span class="level-card__num">04</span>
+          <span class="level-card__body">
+            <span class="level-card__name">Master</span>
+            <span class="level-card__desc">Looks three moves ahead and punishes loose pieces.</span>
+          </span>
+          <span class="level-card__go">SELECT</span>
+        </button>
+
+        <button class="level-card" type="button" data-level="pioneer">
+          <span class="level-card__num">05</span>
+          <span class="level-card__body">
+            <span class="level-card__name">Pioneer</span>
+            <span class="level-card__desc">The cabinet champion. Deep search, no mercy.</span>
+          </span>
+          <span class="level-card__go">SELECT</span>
+        </button>
+
+        <button class="level-card" type="button" data-level="2p">
+          <span class="level-card__num">2P</span>
+          <span class="level-card__body">
+            <span class="level-card__name">Two players</span>
+            <span class="level-card__desc">Same screen, one keyboard. White moves first.</span>
+          </span>
+          <span class="level-card__go">SELECT</span>
+        </button>
+      </div>
+
+      <div class="setup__confirm" id="levelConfirm" hidden>
+        <div class="setup__confirm-body">
+          <p class="setup__confirm-name">SELECTED — <b id="confirmLevelName">BEGINNER</b></p>
+          <p class="setup__confirm-note">THINK TWICE. THIS IS YOUR OPPONENT UNTIL THE GAME ENDS.</p>
+        </div>
+        <button class="btn-pixel" id="confirmLevel" type="button">CONFIRM</button>
+      </div>
+    </div>
+
+    <div class="setup__stage" data-stage="time" hidden>
+      <p class="setup__step">STEP 2 / 2 — CHOOSE A TIME CONTROL</p>
+
+      <div class="time-grid">
+        <button class="time-card" type="button" data-time="120" data-inc="0">
+          <span class="time-card__main">2 min</span>
+          <span class="time-card__sub">Sudden death</span>
+        </button>
+        <button class="time-card" type="button" data-time="180" data-inc="0">
+          <span class="time-card__main">3 min</span>
+          <span class="time-card__sub">Sudden death</span>
+        </button>
+        <button class="time-card" type="button" data-time="120" data-inc="1">
+          <span class="time-card__main">2 + 1</span>
+          <span class="time-card__sub">+1s per move</span>
+        </button>
+        <button class="time-card" type="button" data-time="180" data-inc="1">
+          <span class="time-card__main">3 + 1</span>
+          <span class="time-card__sub">+1s per move</span>
+        </button>
+        <button class="time-card" type="button" data-time="0" data-inc="0">
+          <span class="time-card__main">No clock</span>
+          <span class="time-card__sub">Take your time</span>
+        </button>
+      </div>
+
+      <div class="setup__actions">
+        <button class="btn-pixel btn-pixel--ghost" id="setupBack" type="button">BACK</button>
+        <button class="btn-pixel" id="setupStart" type="button" disabled>START GAME</button>
+      </div>
+      <p class="setup__summary" id="setupSummary" aria-live="polite"></p>
+    </div>
+
+  </section>
+
+  <!-- ============================================================
+       GAME
+       ============================================================ -->
+  <div class="chess-game" id="game" hidden>
+
+    <div class="clocks" id="clocks" hidden>
+      <div class="clock" id="clockW">
+        <span class="clock__side" id="sideW">WHITE</span>
+        <span class="clock__time" id="timeW">3:00</span>
+      </div>
+      <div class="clock" id="clockB">
+        <span class="clock__side" id="sideB">BLACK</span>
+        <span class="clock__time" id="timeB">3:00</span>
+      </div>
+    </div>
+
+    <div class="hud hud--chess">
+      <div class="hud__box"><div class="hud__label">LEVEL</div><div class="hud__val" id="chessLevel">—</div></div>
+      <div class="hud__box"><div class="hud__label">MOVE</div><div class="hud__val" id="chessMove">1</div></div>
+      <div class="hud__box"><div class="hud__label">TAKEN</div><div class="hud__val" id="chessTaken">+0</div></div>
+    </div>
+
+    <div class="chess-controls">
+    <div class="chess-nav" id="chessNav">
+      <button class="btn-pixel btn-pixel--ghost btn-pixel--sm" id="chessPrev" type="button" aria-label="Previous position" disabled>&lt; PREV</button>
+      <span class="chess-nav__pos" id="chessNavPos" aria-live="polite">MOVE 0 / 0</span>
+      <button class="btn-pixel btn-pixel--ghost btn-pixel--sm" id="chessNext" type="button" aria-label="Next position" disabled>NEXT &gt;</button>
+    </div>
+
+    <div class="chess-side">
+      <button class="btn-pixel btn-pixel--ghost btn-pixel--sm" id="chessResign" type="button">RESIGN</button>
+      <button class="btn-pixel btn-pixel--ghost btn-pixel--sm" id="chessNew" type="button">NEW GAME</button>
+      <button class="btn-pixel btn-pixel--ghost btn-pixel--sm" id="chessMenu" type="button">SETUP</button>
+    </div>
+    </div>
+
+    <div class="pixel-frame">
+      <div class="chess-board" id="chessBoard" role="group" aria-label="Chess board"></div>
+
+      <div class="overlay" id="promoOverlay" role="dialog" aria-modal="true" aria-labelledby="promoTitle" hidden>
+        <div>
+          <p class="overlay__title" id="promoTitle">PROMOTE</p>
+          <p class="overlay__sub">CHOOSE YOUR PIECE</p>
+          <div class="overlay__row" id="promoRow">
+            <button class="btn-pixel" data-p="q" type="button">Q</button>
+            <button class="btn-pixel" data-p="r" type="button">R</button>
+            <button class="btn-pixel" data-p="b" type="button">B</button>
+            <button class="btn-pixel" data-p="n" type="button">N</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="resignOverlay" role="dialog" aria-modal="true" aria-labelledby="resignTitle" hidden>
+        <div>
+          <p class="overlay__title" id="resignTitle">RESIGN?</p>
+          <p class="overlay__sub" id="resignSub">THE WIN GOES TO YOUR OPPONENT.</p>
+          <div class="overlay__row">
+            <button class="btn-pixel btn-pixel--ghost" id="resignNo" type="button">KEEP PLAYING</button>
+            <button class="btn-pixel" id="resignYes" type="button">RESIGN</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="chessOverlay" role="dialog" aria-modal="true" aria-labelledby="chessOvTitle" hidden>
+        <div>
+          <p class="overlay__title" id="chessOvTitle">CHECKMATE</p>
+          <p class="overlay__sub" id="chessOvSub"></p>
+          <div class="overlay__row">
+            <button class="btn-pixel" id="chessAgain" type="button">REMATCH</button>
+            <button class="btn-pixel btn-pixel--ghost" id="chessSetup" type="button">CHANGE SETUP</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chess-log" id="chessLog"></div>
+
+    <p class="hint">TAP A PIECE · DOTS SHOW LEGAL MOVES<br>CASTLING · EN PASSANT · PROMOTION INCLUDED</p>
+  </div>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer__inner">
+    <a class="footer__brand" href="index.html" aria-label="Pure Chaos — home">
+      <img src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="footer__cols" aria-label="Footer">
+      <ul class="footer__col">
+        <li><a href="#">Privacy policies</a></li>
+        <li><a href="#">Do not share my personal data</a></li>
+        <li><a href="#">Collaborations</a></li>
+        <li><a href="#">We care about your well-being</a></li>
+        <li><a href="#">Cookies</a></li>
+        <li><a href="#">Terms of use</a></li>
+        <li><a href="#">Sitemap</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Contact us</a></li>
+      </ul>
+      <ul class="footer__col">
+        <li><a href="#">Assets free for downloading</a></li>
+        <li><a href="#">Members of the club</a></li>
+        <li><a href="#">External links</a></li>
+        <li><a href="#">Contributors</a></li>
+      </ul>
+    </nav>
+    <a class="footer__game" href="games.html"><span class="game__fx" aria-hidden="true"><span class="game__invader"></span><span class="game__coin">INSERT COIN</span></span><span class="game__label">Game center <span class="game__arrow">-&gt;</span></span></a>
+  </div>
+</footer>
+
+<script src="assets/chess-engine.js"></script>
+<script src="assets/dialogs.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const E = window.ChessEngine;
+  const GLYPH = { w: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' }, b: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' } };
+  const PIECE_NAME = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' };
+  const $ = (id) => document.getElementById(id);
+
+  /* ---- elements ---- */
+  const setupEl = $('setup');
+  const gameEl = $('game');
+  const statusEl = $('chessStatus');
+  const boardEl = $('chessBoard');
+  const clocksEl = $('clocks');
+  const clockWEl = $('clockW');
+  const clockBEl = $('clockB');
+  const timeWEl = $('timeW');
+  const timeBEl = $('timeB');
+  const sideWEl = $('sideW');
+  const sideBEl = $('sideB');
+  const levelEl = $('chessLevel');
+  const moveEl = $('chessMove');
+  const takenEl = $('chessTaken');
+  const logEl = $('chessLog');
+  const promoOverlay = $('promoOverlay');
+  const endOverlay = $('chessOverlay');
+  const ovTitle = $('chessOvTitle');
+  const ovSub = $('chessOvSub');
+  const setupSummary = $('setupSummary');
+  const startBtn = $('setupStart');
+  const stageEls = [...document.querySelectorAll('.setup__stage')];
+  const levelConfirmEl = $('levelConfirm');
+  const confirmLevelName = $('confirmLevelName');
+  const confirmLevelBtn = $('confirmLevel');
+  const navEl = $('chessNav');
+  const navPosEl = $('chessNavPos');
+  const prevBtn = $('chessPrev');
+  const nextBtn = $('chessNext');
+  const resignBtn = $('chessResign');
+  const resignOverlay = $('resignOverlay');
+  const resignSub = $('resignSub');
+
+  /* ---- state ---- */
+  const S = {
+    mode: 'cpu',
+    levelId: 'intermediate',
+    baseMs: 180000,
+    incMs: 0,
+    board: null,
+    state: null,
+    sel: -1,
+    selMoves: [],
+    lastMove: null,
+    gameLive: false,
+    pendingPromo: null,
+    clock: null,          // { w, b, active, inc }
+    turnStart: 0,
+    timer: 0,
+    reps: new Map(),
+    /* position review */
+    history: [],          // one snapshot per ply: { board, state, lastMove }
+    viewIndex: 0,
+    reviewing: false,
+    aiTimer: 0,
+    endInfo: null,
+  };
+
+  /* ============================================================
+     SETUP
+     ============================================================ */
+  let pickedLevel = 'intermediate';
+  let pickedTime = { base: 180000, inc: 0 };
+  let levelChosen = false;
+  let resignSide = 'w';
+  let stage = 'level';
+
+  function setStatus(text) {
+    statusEl.textContent = text;
+  }
+
+  function pickedKey() {
+    return S.mode === '2p' ? '2p' : pickedLevel;
+  }
+
+  function showStage(name) {
+    stage = name;
+    stageEls.forEach((el) => { el.hidden = el.getAttribute('data-stage') !== name; });
+    if (name === 'level') {
+      const key = pickedKey();
+      [...document.querySelectorAll('.level-card')].forEach((b) => {
+        b.classList.toggle('is-picked', levelChosen && b.getAttribute('data-level') === key);
+      });
+      levelConfirmEl.hidden = !levelChosen;
+      if (levelChosen) {
+        confirmLevelName.textContent = S.mode === '2p' ? 'TWO PLAYERS' : E.LEVELS[pickedLevel].label;
+      }
+      setStatus(levelChosen ? 'CONFIRM YOUR CHOICE' : 'SELECT YOUR LEVEL');
+    } else {
+      [...document.querySelectorAll('.time-card')].forEach((b) => {
+        const base = Number(b.getAttribute('data-time')) * 1000;
+        const inc = Number(b.getAttribute('data-inc')) * 1000;
+        b.classList.toggle('is-picked', base === pickedTime.base && inc === pickedTime.inc);
+      });
+      setStatus('SELECT TIME CONTROL');
+    }
+  }
+
+  function updateSummary() {
+    const cfg = E.LEVELS[pickedLevel];
+    const who = S.mode === '2p' ? 'TWO PLAYERS' : 'CPU · ' + cfg.label;
+    const time = pickedTime.base === 0
+      ? 'NO CLOCK'
+      : Math.round(pickedTime.base / 60000) + ' MIN' + (pickedTime.inc ? ' + ' + pickedTime.inc / 1000 + 'S' : '');
+    setupSummary.textContent = who + '  /  ' + time;
+    startBtn.disabled = !pickedTime;
+  }
+
+  document.querySelectorAll('.level-card').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const level = btn.getAttribute('data-level');
+      if (level === 'learn') { window.location.href = 'game-chess-lesson.html'; return; }
+      if (level === '2p') { S.mode = '2p'; pickedLevel = 'intermediate'; }
+      else { S.mode = 'cpu'; pickedLevel = level; }
+      levelChosen = true;
+      updateSummary();
+      showStage('level');        // keeps the list up and reveals the confirm row
+      levelConfirmEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+  });
+
+  confirmLevelBtn.addEventListener('click', () => {
+    if (!levelChosen) return;
+    updateSummary();
+    showStage('time');
+  });
+
+  document.querySelectorAll('.time-card').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      pickedTime = {
+        base: Number(btn.getAttribute('data-time')) * 1000,
+        inc: Number(btn.getAttribute('data-inc')) * 1000,
+      };
+      showStage('time');       // refresh picked state + enable start
+      updateSummary();
+    });
+  });
+
+  $('setupBack').addEventListener('click', () => showStage('level'));
+  startBtn.addEventListener('click', () => startGame());
+
+  /* ============================================================
+     GAME SETUP / RESET
+     ============================================================ */
+  function showSetup() {
+    stopClock();
+    clearTimeout(S.aiTimer);
+    S.gameLive = false;
+    S.reviewing = false;
+    setupEl.hidden = false;
+    gameEl.hidden = true;
+    endOverlay.hidden = true;
+    promoOverlay.hidden = true;
+    resignOverlay.hidden = true;
+    showStage('level');
+    updateSummary();
+  }
+
+  function startGame() {
+    setupEl.hidden = true;
+    gameEl.hidden = false;
+    endOverlay.hidden = true;
+    promoOverlay.hidden = true;
+    newGame();
+    // the setup list can leave the page scrolled; always show the cabinet from the top
+    window.scrollTo(0, 0);
+  }
+
+  function newGame() {
+    const pos = E.startPos();
+    S.board = pos.board;
+    S.state = pos.state;
+    S.sel = -1;
+    S.selMoves = [];
+    S.lastMove = null;
+    S.gameLive = true;
+    S.pendingPromo = null;
+    S.reps = new Map();
+    bumpRep();
+    S.history = [{ board: S.board, state: S.state, lastMove: null }];
+    S.viewIndex = 0;
+    S.reviewing = false;
+    S.endInfo = null;
+    clearTimeout(S.aiTimer);
+    logEl.innerHTML = '';
+    boardEl.classList.remove('chess-board--over');
+    endOverlay.hidden = true;
+    promoOverlay.hidden = true;
+    resignOverlay.hidden = true;
+
+    S.baseMs = pickedTime.base;
+    S.incMs = pickedTime.inc;
+    S.clock = S.baseMs > 0
+      ? { w: S.baseMs, b: S.baseMs, active: 'w', inc: S.incMs }
+      : null;
+    S.turnStart = performance.now();
+    clocksEl.hidden = !S.clock;
+    sideWEl.textContent = S.mode === '2p' ? 'WHITE · P1' : 'WHITE';
+    sideBEl.textContent = S.mode === '2p' ? 'BLACK · P2' : 'BLACK · CPU';
+    levelEl.textContent = S.mode === '2p' ? '2P' : E.LEVELS[pickedLevel].label;
+    levelEl.title = S.mode === '2p' ? 'Two players' : E.LEVELS[pickedLevel].blurb;
+
+    clearInterval(S.timer);
+    S.timer = setInterval(tickClock, 90);
+
+    render();
+    renderHud();
+    updateClocks();
+    updateNav();
+    setTurnStatus();
+    maybeAi();
+  }
+
+  /* ============================================================
+     CLOCK
+     ============================================================ */
+  function fmtTime(ms) {
+    if (ms <= 0) return '0.0';
+    if (ms < 10000) return (ms / 1000).toFixed(1);
+    const total = Math.ceil(ms / 1000);
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return m + ':' + (s < 10 ? '0' + s : s);
+  }
+
+  function remaining(side) {
+    if (!S.clock) return Infinity;
+    const base = S.clock[side];
+    return S.clock.active === side ? base - (performance.now() - S.turnStart) : base;
+  }
+
+  function updateClocks() {
+    if (!S.clock) return;
+    timeWEl.textContent = fmtTime(remaining('w'));
+    timeBEl.textContent = fmtTime(remaining('b'));
+    clockWEl.classList.toggle('clock--active', S.clock.active === 'w');
+    clockBEl.classList.toggle('clock--active', S.clock.active === 'b');
+    clockWEl.classList.toggle('clock--low', remaining('w') < 10000);
+    clockBEl.classList.toggle('clock--low', remaining('b') < 10000);
+  }
+
+  function tickClock() {
+    if (!S.gameLive || !S.clock || !S.clock.active) return;
+    if (remaining(S.clock.active) <= 0) {
+      S.clock[S.clock.active] = 0;
+      updateClocks();
+      flagFall(S.clock.active);
+      return;
+    }
+    updateClocks();
+  }
+
+  function stopClock() {
+    clearInterval(S.timer);
+    S.timer = 0;
+    if (S.clock) S.clock.active = null;
+  }
+
+  /* commit the time spent on a move, add the increment, hand over the clock.
+     The flag is judged on the time actually spent BEFORE the increment is
+     added, so running out of time cannot be bought back by the increment. */
+  function commitClock(mover) {
+    if (!S.clock) return false;
+    const now = performance.now();
+    const spent = now - S.turnStart;
+    S.turnStart = now;
+    if (S.clock[mover] - spent <= 0) {
+      S.clock[mover] = 0;
+      S.clock.active = null;
+      updateClocks();
+      flagFall(mover);
+      return true;
+    }
+    S.clock[mover] = S.clock[mover] - spent + S.clock.inc;
+    S.clock.active = E.opp(mover);
+    updateClocks();
+    return false;
+  }
+
+  function flagFall(side) {
+    S.clock[side] = 0;
+    stopClock();            // clears the active side
+    updateClocks();         // then repaint, so no clock stays highlighted
+    const winner = side === 'w' ? 'BLACK' : 'WHITE';
+    setStatus('TIME OUT — ' + winner + ' WINS');
+    endGame('TIME OUT', winner + ' WINS ON TIME');
+  }
+
+  /* ============================================================
+     BOARD RENDERING
+     ============================================================ */
+  const R = E.R;
+  const C = E.C;
+  const sqEls = [];
+  for (let i = 0; i < 64; i++) {
+    const d = document.createElement('div');
+    d.className = 'chess-sq ' + (((R(i) + C(i)) % 2 === 0) ? 'chess-sq--light' : 'chess-sq--dark');
+    d.setAttribute('role', 'button');
+    d.tabIndex = 0;
+    d.addEventListener('click', () => onTap(i));
+    d.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        onTap(i);
+      }
+    });
+    boardEl.appendChild(d);
+    sqEls.push(d);
+  }
+
+  function viewedPosition() {
+    return S.reviewing
+      ? S.history[S.viewIndex]
+      : { board: S.board, state: S.state, lastMove: S.lastMove };
+  }
+
+  function render() {
+    const view = viewedPosition();
+    const board = view.board;
+    const state = view.state;
+    const lastMove = view.lastMove;
+
+    const moveSet = {};
+    if (!S.reviewing) {
+      for (const m of S.selMoves) moveSet[m.to] = (board[m.to] || m.ep) ? 'cap' : 'move';
+    }
+    const checkSide = E.kingSquare(board, state.turn) >= 0 && E.inCheck(board, state, state.turn)
+      ? E.kingSquare(board, state.turn)
+      : -1;
+
+    for (let i = 0; i < 64; i++) {
+      const el = sqEls[i];
+      el.classList.remove('chess-sq--sel', 'chess-sq--move', 'chess-sq--cap', 'chess-sq--last', 'chess-sq--check');
+      const p = board[i];
+      el.setAttribute('aria-label',
+        (p ? (p.c === 'w' ? 'White ' : 'Black ') + PIECE_NAME[p.t] : 'Empty square') + ' ' + E.sqName(i));
+      el.innerHTML = p ? '<span class="' + (p.c === 'w' ? 'pc-w' : 'pc-b') + '">' + GLYPH[p.c][p.t] + '</span>' : '';
+      if (!S.reviewing && i === S.sel) el.classList.add('chess-sq--sel');
+      if (moveSet[i] === 'move') el.classList.add('chess-sq--move');
+      if (moveSet[i] === 'cap') el.classList.add('chess-sq--cap');
+      if (lastMove && (i === lastMove.from || i === lastMove.to)) el.classList.add('chess-sq--last');
+      if (i === checkSide) el.classList.add('chess-sq--check');
+    }
+  }
+
+  function renderHud() {
+    const view = viewedPosition();
+    moveEl.textContent = view.state.full;
+    let diff = 0;
+    for (let i = 0; i < 64; i++) {
+      const p = view.board[i];
+      if (!p) continue;
+      diff += p.c === 'w' ? E.VALUE[p.t] : -E.VALUE[p.t];
+    }
+    const pawns = Math.round(diff / 100);
+    takenEl.textContent = (pawns > 0 ? '+' + pawns : pawns < 0 ? String(pawns) : '+0');
+  }
+
+  function setTurnStatus() {
+    setStatus((S.state.turn === 'w' ? 'WHITE' : 'BLACK') + ' TO MOVE' +
+      (E.inCheck(S.board, S.state, S.state.turn) ? ' — CHECK!' : ''));
+  }
+
+  /* ============================================================
+     POSITION REVIEW — back / forward through the move history
+     The clock is paused while reviewing, so looking back never
+     costs you time (and you cannot move from a past position).
+     ============================================================ */
+  function historyLast() {
+    return Math.max(0, S.history.length - 1);
+  }
+
+  function updateNav() {
+    const last = historyLast();
+    prevBtn.disabled = S.viewIndex <= 0;
+    nextBtn.disabled = S.viewIndex >= last;
+    navEl.classList.toggle('chess-nav--reviewing', S.reviewing);
+    navPosEl.textContent = 'MOVE ' + S.viewIndex + ' / ' + last;
+    resignBtn.disabled = !S.gameLive || S.reviewing;
+  }
+
+  function pauseClock() {
+    if (!S.clock || !S.clock.active) return;
+    S.clock[S.clock.active] = Math.max(0, S.clock[S.clock.active] - (performance.now() - S.turnStart));
+    S.clock.active = null;
+    updateClocks();
+  }
+
+  function resumeClock() {
+    if (!S.clock || !S.gameLive) return;
+    S.clock.active = S.state.turn;
+    S.turnStart = performance.now();
+    updateClocks();
+  }
+
+  function reviewStatus() {
+    setStatus('REVIEW — MOVE ' + S.viewIndex + ' / ' + historyLast() + ' · CLOCK PAUSED');
+  }
+
+  function enterReview() {
+    if (S.reviewing) return;
+    S.reviewing = true;
+    clearTimeout(S.aiTimer);
+    pauseClock();
+    promoOverlay.hidden = true;
+    endOverlay.hidden = true;          // let the board show while stepping back
+    resignOverlay.hidden = true;
+    S.sel = -1;
+    S.selMoves = [];
+    navEl.classList.add('chess-nav--reviewing');
+    render();
+    renderHud();
+    reviewStatus();
+    updateNav();
+  }
+
+  function exitReview() {
+    if (!S.reviewing) return;
+    S.reviewing = false;
+    S.viewIndex = historyLast();
+    navEl.classList.remove('chess-nav--reviewing');
+    if (S.gameLive) {
+      resumeClock();
+      setTurnStatus();
+      maybeAi();
+    } else if (S.endInfo) {
+      ovTitle.textContent = S.endInfo.title;
+      ovSub.innerHTML = S.endInfo.sub;
+      endOverlay.hidden = false;
+    }
+    render();
+    renderHud();
+    updateNav();
+  }
+
+  function goPrev() {
+    if (S.viewIndex <= 0) return;
+    if (!S.reviewing) enterReview();
+    S.viewIndex--;
+    render();
+    renderHud();
+    reviewStatus();
+    updateNav();
+  }
+
+  function goNext() {
+    if (S.viewIndex >= historyLast()) return;
+    S.viewIndex++;
+    if (S.viewIndex >= historyLast()) { exitReview(); return; }
+    if (!S.reviewing) enterReview();
+    render();
+    renderHud();
+    reviewStatus();
+    updateNav();
+  }
+
+  /* ============================================================
+     TURN FLOW
+     ============================================================ */
+  function bumpRep() {
+    const key = E.positionKey(S.board, S.state);
+    S.reps.set(key, (S.reps.get(key) || 0) + 1);
+    return S.reps.get(key);
+  }
+
+  function doMove(m, promoPiece) {
+    if (!m) return;
+    const preState = S.state;
+    const san = E.san(S.board, S.state, m, promoPiece);
+    const res = E.applyMove(S.board, S.state, m, promoPiece);
+
+    S.board = res.board;
+    S.state = res.state;
+    S.sel = -1;
+    S.selMoves = [];
+    S.lastMove = { from: m.from, to: m.to };
+    S.history.push({ board: S.board, state: S.state, lastMove: S.lastMove });
+    S.viewIndex = S.history.length - 1;
+    updateNav();
+
+    if (preState.turn === 'w') {
+      const line = document.createElement('div');
+      line.textContent = preState.full + '. ' + san;
+      logEl.appendChild(line);
+    } else {
+      const line = logEl.lastChild;
+      if (line) line.textContent += '  ' + san;
+    }
+    logEl.scrollTop = logEl.scrollHeight;
+
+    const over = commitClock(preState.turn);
+    render();
+    renderHud();
+    if (over) return;
+
+    bumpRep();
+    afterMove();
+  }
+
+  function afterMove() {
+    const chk = E.inCheck(S.board, S.state, S.state.turn);
+    const replies = E.allLegal(S.board, S.state, S.state.turn);
+
+    if (!replies.length) {
+      if (chk) {
+        const winner = S.state.turn === 'w' ? 'BLACK' : 'WHITE';
+        setStatus('CHECKMATE — ' + winner + ' WINS');
+        endGame('CHECKMATE', winner + ' WINS THE GAME', winner);
+      } else {
+        setStatus('STALEMATE — DRAW');
+        endGame('STALEMATE', 'DRAW GAME', null);
+      }
+      return;
+    }
+    if (E.insufficientMaterial(S.board)) {
+      setStatus('DRAW — INSUFFICIENT MATERIAL');
+      endGame('DRAW', 'INSUFFICIENT MATERIAL', null);
+      return;
+    }
+    if (S.state.half >= 100) {
+      setStatus('DRAW — 50-MOVE RULE');
+      endGame('DRAW', 'FIFTY-MOVE RULE', null);
+      return;
+    }
+    if (S.reps.get(E.positionKey(S.board, S.state)) >= 3) {
+      setStatus('DRAW — THREEFOLD REPETITION');
+      endGame('DRAW', 'THREEFOLD REPETITION', null);
+      return;
+    }
+
+    setTurnStatus();
+    maybeAi();
+  }
+
+  function maybeAi() {
+    if (!S.gameLive || S.mode !== 'cpu' || S.state.turn !== 'b' || S.reviewing) return;
+    setStatus('CPU THINKING…');
+    const cfg = E.LEVELS[pickedLevel];
+    clearTimeout(S.aiTimer);
+    S.aiTimer = setTimeout(() => {
+      if (!S.gameLive || S.mode !== 'cpu' || S.state.turn !== 'b' || S.reviewing) return;
+      if (S.clock && remaining('b') <= 0) { flagFall('b'); return; }
+
+      let budget = cfg.budget;
+      if (S.clock) budget = Math.max(140, Math.min(cfg.budget, remaining('b') * 0.35));
+
+      const m = E.chooseMove(S.board, S.state, pickedLevel, { budgetMs: budget });
+      if (m) doMove(m, m.promo ? 'q' : null);
+    }, 240);
+  }
+
+  function endGame(title, sub) {
+    S.gameLive = false;
+    clearTimeout(S.aiTimer);
+    stopClock();
+    updateClocks();          // no clock stays highlighted after the result
+    S.reviewing = false;
+    S.viewIndex = historyLast();
+    navEl.classList.remove('chess-nav--reviewing');
+    promoOverlay.hidden = true;
+    resignOverlay.hidden = true;
+    boardEl.classList.add('chess-board--over');
+    ovTitle.textContent = title;
+    const who = S.mode === '2p' ? '2 PLAYERS' : 'CPU · ' + E.LEVELS[pickedLevel].label;
+    const clock = S.baseMs > 0
+      ? '<br>' + Math.round(S.baseMs / 60000) + ' MIN' + (S.incMs ? ' + ' + S.incMs / 1000 + 'S' : '')
+      : '<br>NO CLOCK';
+    ovSub.innerHTML = sub + '<br>' + who + clock;
+    S.endInfo = { title: title, sub: ovSub.innerHTML };
+    endOverlay.hidden = false;
+    render();
+    renderHud();
+    updateNav();
+  }
+
+  /* ============================================================
+     INPUT
+     ============================================================ */
+  function onTap(i) {
+    if (!S.gameLive || S.reviewing) return;
+    if (!promoOverlay.hidden || !endOverlay.hidden || !resignOverlay.hidden) return;
+    if (S.mode === 'cpu' && S.state.turn === 'b') return;
+    if (S.clock && S.clock.active === null) return;
+
+    const p = S.board[i];
+    if (S.sel >= 0) {
+      const m = S.selMoves.find((x) => x.to === i);
+      if (m) {
+        if (m.promo) {
+          S.pendingPromo = m;
+          promoOverlay.hidden = false;
+          return;
+        }
+        doMove(m, null);
+        return;
+      }
+    }
+    if (p && p.c === S.state.turn) {
+      if (S.sel === i) { S.sel = -1; S.selMoves = []; }
+      else { S.sel = i; S.selMoves = E.legalMoves(S.board, S.state, i); }
+      render();
+    } else {
+      S.sel = -1;
+      S.selMoves = [];
+      render();
+    }
+  }
+
+  $('promoRow').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b || !S.pendingPromo) return;
+    const m = S.pendingPromo;
+    S.pendingPromo = null;
+    promoOverlay.hidden = true;
+    doMove(m, b.getAttribute('data-p'));
+  });
+
+  $('chessAgain').addEventListener('click', () => { endOverlay.hidden = true; newGame(); });
+  $('chessNew').addEventListener('click', () => { endOverlay.hidden = true; newGame(); });
+  $('chessSetup').addEventListener('click', showSetup);
+  $('chessMenu').addEventListener('click', showSetup);
+
+  /* resign with a confirmation beat */
+  resignBtn.addEventListener('click', () => {
+    if (!S.gameLive || S.reviewing) return;
+    // CPU mode: the human always plays White, so resigning must not depend on
+    // whose turn it happens to be (the CPU used to "resign" on its own turn).
+    resignSide = S.mode === 'cpu' ? 'w' : S.state.turn;
+    const loser = resignSide === 'w' ? 'WHITE' : 'BLACK';
+    const winner = resignSide === 'w' ? 'BLACK' : 'WHITE';
+    resignSub.textContent = loser + ' RESIGNS · ' + winner + ' WINS THE GAME.';
+    clearTimeout(S.aiTimer);            // the CPU must not move behind the dialog
+    resignOverlay.hidden = false;
+  });
+  $('resignNo').addEventListener('click', () => {
+    resignOverlay.hidden = true;
+    if (!S.gameLive) return;
+    setTurnStatus();
+    maybeAi();
+  });
+  $('resignYes').addEventListener('click', () => {
+    resignOverlay.hidden = true;
+    if (!S.gameLive) return;
+    const loser = resignSide === 'w' ? 'WHITE' : 'BLACK';
+    const winner = resignSide === 'w' ? 'BLACK' : 'WHITE';
+    setStatus('RESIGNED — ' + winner + ' WINS');
+    endGame('RESIGNED', loser + ' RESIGNED · ' + winner + ' WINS THE GAME');
+  });
+
+  /* review navigation */
+  prevBtn.addEventListener('click', goPrev);
+  nextBtn.addEventListener('click', goNext);
+  document.addEventListener('keydown', (e) => {
+    if (gameEl.hidden) return;
+    if (!promoOverlay.hidden || !endOverlay.hidden || !resignOverlay.hidden) return;
+    // never steal arrow keys from form fields or other interactive widgets
+    const t = e.target;
+    if (t && t.closest && t.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+  });
+
+  /* ============================================================
+     BOOT
+     ============================================================ */
+  const params = new URLSearchParams(window.location.search);
+  const urlLevel = params.get('level');
+  const urlTime = params.get('time');
+  const urlInc = params.get('inc');
+
+  if (urlLevel && E.LEVELS[urlLevel]) {
+    pickedLevel = urlLevel;
+    S.mode = 'cpu';
+    levelChosen = true;
+  } else if (urlLevel === '2p') {
+    S.mode = '2p';
+    pickedLevel = 'intermediate';
+    levelChosen = true;
+  }
+  if (urlLevel && (E.LEVELS[urlLevel] || urlLevel === '2p')) {
+    if (urlTime !== null) {
+      pickedTime = { base: Math.max(0, Number(urlTime) || 0) * 1000, inc: Math.max(0, Number(urlInc) || 0) * 1000 };
+      startGame();
+    } else {
+      showSetup();
+      showStage('time');
+      updateSummary();
+    }
+  } else {
+    showSetup();
+  }
+
+
+})();
+</script>
+
+</body>
+</html>

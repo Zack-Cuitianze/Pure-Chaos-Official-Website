@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2048 — Game Center</title>
+<meta name="description" content="Pure Chaos — 2048. Slide and merge.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-title" content="Pure Chaos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/vt323.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/games.css">
+</head>
+<body class="arcade">
+
+<div class="ambient" aria-hidden="true"></div>
+
+<header class="nav" role="banner">
+  <div class="nav__inner">
+    <a class="brand" href="index.html" aria-label="Pure Chaos — home">
+      <img class="brand__mark" src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a class="glass-btn" href="brands.html"><span>brands</span></a>
+      <a class="glass-btn" href="about.html"><span>about us</span></a>
+      <a class="glass-btn" href="articles.html"><span>articles</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="play">
+  <a class="crumbs" href="games.html">&lt;- GAME CENTER</a>
+  <h1 class="play__title">2048</h1>
+  <p class="play__prompt">SLIDE · MERGE · WIN</p>
+
+  <div class="hud">
+    <div class="hud__box"><div class="hud__label">SCORE</div><div class="hud__val" id="tfeScore">0</div></div>
+    <div class="hud__box"><div class="hud__label">BEST</div><div class="hud__val" id="tfeBest">0</div></div>
+    <div class="hud__box"><div class="hud__label">MAX</div><div class="hud__val" id="tfeMax">2</div></div>
+  </div>
+
+  <div class="pixel-frame">
+    <div class="tfe-grid" id="tfeGrid" aria-label="2048 board"></div>
+    <div class="overlay" id="tfeOverlay" role="dialog" aria-modal="true" aria-labelledby="tfeOvTitle" hidden>
+      <div>
+        <p class="overlay__title" id="tfeOvTitle">GAME OVER</p>
+        <p class="overlay__sub" id="tfeOvSub"></p>
+        <div class="overlay__row">
+          <button class="btn-pixel" id="tfeAgain" type="button">RETRY</button>
+          <button class="btn-pixel btn-pixel--ghost" id="tfeKeep" type="button" hidden>KEEP GOING</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay__row overlay__row--standalone">
+    <button class="btn-pixel btn-pixel--ghost" id="tfeNew" type="button">NEW GAME</button>
+  </div>
+
+  <p class="hint">ARROWS / WASD · OR SWIPE<br>MERGE TILES TO REACH 2048</p>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer__inner">
+    <a class="footer__brand" href="index.html" aria-label="Pure Chaos — home">
+      <img src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="footer__cols" aria-label="Footer">
+      <ul class="footer__col">
+        <li><a href="#">Privacy policies</a></li>
+        <li><a href="#">Do not share my personal data</a></li>
+        <li><a href="#">Collaborations</a></li>
+        <li><a href="#">We care about your well-being</a></li>
+        <li><a href="#">Cookies</a></li>
+        <li><a href="#">Terms of use</a></li>
+        <li><a href="#">Sitemap</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Contact us</a></li>
+      </ul>
+      <ul class="footer__col">
+        <li><a href="#">Assets free for downloading</a></li>
+        <li><a href="#">Members of the club</a></li>
+        <li><a href="#">External links</a></li>
+        <li><a href="#">Contributors</a></li>
+      </ul>
+    </nav>
+    <a class="footer__game" href="games.html"><span class="game__fx" aria-hidden="true"><span class="game__invader"></span><span class="game__coin">INSERT COIN</span></span><span class="game__label">Game center <span class="game__arrow">-&gt;</span></span></a>
+  </div>
+</footer>
+
+<script src="assets/dialogs.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const grid = document.getElementById('tfeGrid');
+  const elScore = document.getElementById('tfeScore');
+  const elBest = document.getElementById('tfeBest');
+  const elMax = document.getElementById('tfeMax');
+  const overlay = document.getElementById('tfeOverlay');
+  const ovTitle = document.getElementById('tfeOvTitle');
+  const ovSub = document.getElementById('tfeOvSub');
+  const btnAgain = document.getElementById('tfeAgain');
+  const btnKeep = document.getElementById('tfeKeep');
+  const btnNew = document.getElementById('tfeNew');
+
+  const KEY = 'pc_2048_best';
+  let best = 0;
+  try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
+  elBest.textContent = best;
+
+  let cells, score, over, won, keepGoing;
+  const boxEls = [];
+
+  for (let i = 0; i < 16; i++) {
+    const d = document.createElement('div');
+    d.className = 'tfe-cell';
+    grid.appendChild(d);
+    boxEls.push(d);
+  }
+
+  function emptyIdx() {
+    const out = [];
+    for (let i = 0; i < 16; i++) if (!cells[i]) out.push(i);
+    return out;
+  }
+
+  function spawn() {
+    const e = emptyIdx();
+    if (!e.length) return;
+    const i = e[Math.floor(Math.random() * e.length)];
+    cells[i] = Math.random() < 0.9 ? 2 : 4;
+    pop(i);
+  }
+
+  function pop(i) {
+    const el = boxEls[i];
+    el.classList.remove('tfe-cell--pop');
+    void el.offsetWidth;
+    el.classList.add('tfe-cell--pop');
+  }
+
+  function render() {
+    let mx = 2;
+    for (let i = 0; i < 16; i++) {
+      const v = cells[i];
+      const el = boxEls[i];
+      if (v) {
+        el.textContent = v >= 16384 ? (v / 1024) + 'K' : v;
+        el.dataset.v = v > 8192 ? '8192' : v;
+        if (v > mx) mx = v;
+      } else {
+        el.textContent = '';
+        delete el.dataset.v;
+      }
+    }
+    elScore.textContent = score;
+    elMax.textContent = mx;
+    if (score > best) {
+      best = score;
+      elBest.textContent = best;
+      try { localStorage.setItem(KEY, String(best)); } catch (e) {}
+    }
+  }
+
+  // lines of indices in move order for each direction
+  function lines(dir) {
+    const L = [];
+    for (let k = 0; k < 4; k++) {
+      const line = [];
+      for (let j = 0; j < 4; j++) {
+        let r, c;
+        if (dir === 'left') { r = k; c = j; }
+        else if (dir === 'right') { r = k; c = 3 - j; }
+        else if (dir === 'up') { r = j; c = k; }
+        else { r = 3 - j; c = k; }
+        line.push(r * 4 + c);
+      }
+      L.push(line);
+    }
+    return L;
+  }
+
+  function move(dir) {
+    // freeze the board while the win / game-over overlay is up (KEEP GOING lowers it)
+    if (!overlay.hidden) return;
+    if (over && !keepGoing) return;
+    let moved = false;
+    const merged = [];
+    for (const line of lines(dir)) {
+      const vals = line.map((i) => cells[i]).filter(Boolean);
+      const out = [];
+      for (let k = 0; k < vals.length; k++) {
+        if (k + 1 < vals.length && vals[k] === vals[k + 1]) {
+          const v = vals[k] * 2;
+          out.push(v);
+          score += v;
+          // Pop the cell the merged tile actually lands on. `k` is the index in the
+          // compacted row, not in `line`, so it drifts once an earlier merge shortened
+          // the row. `out.length - 1` maps back to the correct board square.
+          merged.push(line[out.length - 1]);
+          k++;
+        } else {
+          out.push(vals[k]);
+        }
+      }
+      while (out.length < 4) out.push(0);
+      for (let k = 0; k < 4; k++) {
+        if (cells[line[k]] !== out[k]) moved = true;
+        cells[line[k]] = out[k];
+      }
+    }
+    if (!moved) return;
+    spawn();
+    render();
+    merged.forEach(pop);
+
+    const mx = Math.max(...cells);
+    if (!won && mx >= 2048) {
+      won = true;
+      ovTitle.textContent = 'YOU WIN';
+      ovSub.innerHTML = 'SCORE ' + score + '<br>REACH FOR MORE?';
+      btnKeep.hidden = false;
+      overlay.hidden = false;
+      return;
+    }
+    if (!canMove()) {
+      over = true;
+      ovTitle.textContent = 'GAME OVER';
+      ovSub.textContent = 'SCORE ' + score + ' · BEST ' + best;
+      btnKeep.hidden = true;
+      overlay.hidden = false;
+    }
+  }
+
+  function canMove() {
+    if (emptyIdx().length) return true;
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const v = cells[r * 4 + c];
+        if (c < 3 && cells[r * 4 + c + 1] === v) return true;
+        if (r < 3 && cells[(r + 1) * 4 + c] === v) return true;
+      }
+    }
+    return false;
+  }
+
+  function init() {
+    cells = new Array(16).fill(0);
+    score = 0;
+    over = false;
+    won = false;
+    keepGoing = false;
+    btnKeep.hidden = true;
+    overlay.hidden = true;
+    spawn();
+    spawn();
+    render();
+  }
+
+  const keymap = {
+    ArrowLeft: 'left', a: 'left', A: 'left',
+    ArrowRight: 'right', d: 'right', D: 'right',
+    ArrowUp: 'up', w: 'up', W: 'up',
+    ArrowDown: 'down', s: 'down', S: 'down'
+  };
+  window.addEventListener('keydown', (e) => {
+    const dir = keymap[e.key];
+    if (dir) { move(dir); e.preventDefault(); }
+  });
+
+  // touch swipe
+  let tx = null, ty = null;
+  grid.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    tx = t.clientX; ty = t.clientY;
+  }, { passive: true });
+  grid.addEventListener('touchend', (e) => {
+    if (tx === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - tx, dy = t.clientY - ty;
+    tx = ty = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+    move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+    e.preventDefault();
+  }, { passive: false });
+
+  btnAgain.addEventListener('click', init);
+  btnNew.addEventListener('click', init);
+  btnKeep.addEventListener('click', () => {
+    keepGoing = true;
+    overlay.hidden = true;
+  });
+
+  init();
+})();
+</script>
+
+</body>
+</html>

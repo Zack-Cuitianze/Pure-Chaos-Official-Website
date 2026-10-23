@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Racing — Game Center</title>
+<meta name="description" content="Pure Chaos — Racing. Dodge traffic.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-title" content="Pure Chaos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/vt323.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/games.css">
+</head>
+<body class="arcade">
+
+<div class="ambient" aria-hidden="true"></div>
+
+<header class="nav" role="banner">
+  <div class="nav__inner">
+    <a class="brand" href="index.html" aria-label="Pure Chaos — home">
+      <img class="brand__mark" src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a class="glass-btn" href="brands.html"><span>brands</span></a>
+      <a class="glass-btn" href="about.html"><span>about us</span></a>
+      <a class="glass-btn" href="articles.html"><span>articles</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="play">
+  <a class="crumbs" href="games.html">&lt;- GAME CENTER</a>
+  <h1 class="play__title">RACING</h1>
+  <p class="play__prompt play__prompt--blink" id="racePrompt">PRESS START</p>
+
+  <div class="hud">
+    <div class="hud__box"><div class="hud__label">SCORE</div><div class="hud__val" id="raceScore">0</div></div>
+    <div class="hud__box"><div class="hud__label">SPEED</div><div class="hud__val" id="raceSpeed">0</div></div>
+    <div class="hud__box"><div class="hud__label">BEST</div><div class="hud__val" id="raceBest">0</div></div>
+  </div>
+
+  <div class="pixel-frame">
+    <canvas id="raceCv" width="360" height="540" aria-label="Racing game"></canvas>
+    <div class="overlay" id="raceOverlay" role="dialog" aria-modal="true" aria-labelledby="raceOvTitle">
+      <div>
+        <p class="overlay__title" id="raceOvTitle">READY?</p>
+        <p class="overlay__sub" id="raceOvSub">DODGE TRAFFIC · DON'T CRASH<br>ARROWS / A D · OR DRAG</p>
+        <div class="overlay__row">
+          <button class="btn-pixel" id="raceStart" type="button">START</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">ARROWS / A D TO STEER · DRAG ON TOUCH<br>SURVIVE AS LONG AS YOU CAN</p>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer__inner">
+    <a class="footer__brand" href="index.html" aria-label="Pure Chaos — home">
+      <img src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="footer__cols" aria-label="Footer">
+      <ul class="footer__col">
+        <li><a href="#">Privacy policies</a></li>
+        <li><a href="#">Do not share my personal data</a></li>
+        <li><a href="#">Collaborations</a></li>
+        <li><a href="#">We care about your well-being</a></li>
+        <li><a href="#">Cookies</a></li>
+        <li><a href="#">Terms of use</a></li>
+        <li><a href="#">Sitemap</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Contact us</a></li>
+      </ul>
+      <ul class="footer__col">
+        <li><a href="#">Assets free for downloading</a></li>
+        <li><a href="#">Members of the club</a></li>
+        <li><a href="#">External links</a></li>
+        <li><a href="#">Contributors</a></li>
+      </ul>
+    </nav>
+    <a class="footer__game" href="games.html"><span class="game__fx" aria-hidden="true"><span class="game__invader"></span><span class="game__coin">INSERT COIN</span></span><span class="game__label">Game center <span class="game__arrow">-&gt;</span></span></a>
+  </div>
+</footer>
+
+<script src="assets/dialogs.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const cv = document.getElementById('raceCv');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+
+  const elScore = document.getElementById('raceScore');
+  const elSpeed = document.getElementById('raceSpeed');
+  const elBest = document.getElementById('raceBest');
+  const overlay = document.getElementById('raceOverlay');
+  const ovTitle = document.getElementById('raceOvTitle');
+  const ovSub = document.getElementById('raceOvSub');
+  const btnStart = document.getElementById('raceStart');
+  const prompt = document.getElementById('racePrompt');
+
+  const KEY = 'pc_racing_best';
+  let best = 0;
+  try { best = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) {}
+  elBest.textContent = best;
+
+  const ROAD_L = 52, ROAD_R = W - 52;
+  const PW = 34, PH = 56;               // player size
+  const EW = 34, EH = 56;               // enemy size
+
+  let state = 'ready';                  // ready | run | over
+  let px, enemies, spawnT, speed, dist, lineOff, boomT;
+  let keys = { left: false, right: false };
+  let dragX = null;
+
+  function reset() {
+    px = W / 2;
+    enemies = [];
+    spawnT = 0.6;
+    speed = 4;
+    dist = 0;
+    lineOff = 0;
+    boomT = 0;
+    elScore.textContent = '0';
+    elSpeed.textContent = '0';
+  }
+
+  function start() {
+    reset();
+    state = 'run';
+    overlay.hidden = true;
+    prompt.textContent = 'GO!';
+    prompt.classList.remove('play__prompt--blink');
+  }
+
+  function gameOver() {
+    state = 'over';
+    boomT = 0.9;
+    const m = Math.floor(dist);
+    if (m > best) {
+      best = m;
+      try { localStorage.setItem(KEY, String(best)); } catch (e) {}
+      elBest.textContent = best;
+    }
+    ovTitle.textContent = 'WRECKED';
+    ovSub.innerHTML = 'SCORE ' + m + ' M · BEST ' + best + ' M<br>TAP START TO RETRY';
+    btnStart.textContent = 'RETRY';
+    overlay.hidden = false;
+    prompt.textContent = 'WRECKED';
+    prompt.classList.remove('play__prompt--blink');
+  }
+
+  function spawnEnemy() {
+    const lanes = 4;
+    const laneW = (ROAD_R - ROAD_L) / lanes;
+    const lane = Math.floor(Math.random() * lanes);
+    const x = ROAD_L + laneW * lane + laneW / 2;
+    // avoid spawning on top of a slow sibling in the same lane
+    for (const e of enemies) {
+      if (Math.abs(e.x - x) < EW + 6 && e.y < EH + 30) return;
+    }
+    enemies.push({
+      x: x,
+      y: -EH,
+      v: speed * (0.45 + Math.random() * 0.3),  // slower than road => relative approach
+      shade: ['#8e8e99', '#6d6d77', '#a5a5b0'][Math.floor(Math.random() * 3)]
+    });
+  }
+
+  function car(x, y, w, h, body, glass) {
+    ctx.fillStyle = body;
+    ctx.fillRect(Math.round(x - w / 2), Math.round(y - h / 2), w, h);
+    ctx.fillStyle = '#0b0b10';
+    ctx.fillRect(Math.round(x - w / 2) + 4, Math.round(y - h / 2) + 10, w - 8, 12); // windshield
+    ctx.fillRect(Math.round(x - w / 2) + 4, Math.round(y + h / 2) - 14, w - 8, 6);  // rear window
+    ctx.fillStyle = glass;
+    ctx.fillRect(Math.round(x - 3), Math.round(y - 6), 6, 12);                      // stripe
+  }
+
+  function draw(dt) {
+    // bg
+    ctx.fillStyle = '#0b0b10';
+    ctx.fillRect(0, 0, W, H);
+
+    // road rails
+    ctx.fillStyle = '#1d1d24';
+    ctx.fillRect(ROAD_L - 14, 0, 14, H);
+    ctx.fillRect(ROAD_R, 0, 14, H);
+    ctx.fillStyle = '#fff';
+    for (let y = -40; y < H + 40; y += 40) {
+      const yy = Math.round(y + (lineOff % 40));
+      ctx.fillRect(ROAD_L - 14, yy, 14, 4);
+      ctx.fillRect(ROAD_R, yy, 14, 4);
+    }
+
+    // lane dashes
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    const lanes = 4;
+    const laneW = (ROAD_R - ROAD_L) / lanes;
+    for (let i = 1; i < lanes; i++) {
+      const x = Math.round(ROAD_L + laneW * i);
+      for (let y = -30; y < H + 30; y += 60) {
+        ctx.fillRect(x - 2, Math.round(y + (lineOff % 60)), 4, 26);
+      }
+    }
+
+    // enemies
+    for (const e of enemies) {
+      car(e.x, e.y, EW, EH, e.shade, 'rgba(11,11,16,0.85)');
+    }
+
+    // player (blink during explosion)
+    if (state === 'run' || Math.floor(boomT * 12) % 2 === 0) {
+      car(px, H - 100, PW, PH, '#ffffff', '#0b0b10');
+    }
+
+    // explosion squares
+    if (state === 'over' && boomT > 0) {
+      const t = 1 - boomT / 0.9;
+      ctx.fillStyle = '#fff';
+      const n = 14;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + t;
+        const r = 12 + t * 90;
+        const s = 8 - t * 6;
+        ctx.fillRect(
+          Math.round(px + Math.cos(a) * r),
+          Math.round((H - 100) + Math.sin(a) * r),
+          Math.max(2, Math.round(s)), Math.max(2, Math.round(s))
+        );
+      }
+    }
+  }
+
+  let last = 0;
+  function loop(now) {
+    requestAnimationFrame(loop);
+    const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
+    last = now;
+
+    if (state === 'run') {
+      const steer = 260;
+      if (keys.left) px -= steer * dt;
+      if (keys.right) px += steer * dt;
+      px = Math.max(ROAD_L + PW / 2 + 4, Math.min(ROAD_R - PW / 2 - 4, px));
+
+      speed = Math.min(11, 4 + dist * 0.012);
+      dist += speed * dt * 4;
+      lineOff += speed * dt * 22;
+
+      spawnT -= dt;
+      if (spawnT <= 0) {
+        spawnEnemy();
+        spawnT = Math.max(0.32, 0.95 - dist * 0.0011);
+      }
+
+      for (const e of enemies) e.y += (speed - e.v) * dt * 22 + e.v * dt * 22 * 0.4;
+      enemies = enemies.filter((e) => e.y < H + EH);
+
+      // collision
+      for (const e of enemies) {
+        if (Math.abs(e.x - px) < (EW + PW) / 2 - 6 &&
+            Math.abs(e.y - (H - 100)) < (EH + PH) / 2 - 8) {
+          gameOver();
+          break;
+        }
+      }
+
+      const m = Math.floor(dist);
+      elScore.textContent = m;
+      elSpeed.textContent = Math.round(speed * 22);
+    } else if (state === 'over' && boomT > 0) {
+      boomT -= dt;
+      lineOff += dt * 30;
+    }
+
+    draw(dt);
+  }
+
+  // input
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { keys.left = true; e.preventDefault(); }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { keys.right = true; e.preventDefault(); }
+    if ((e.key === ' ' || e.key === 'Enter') && state !== 'run') { start(); e.preventDefault(); }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+  });
+
+  function cvX(t) {
+    const r = cv.getBoundingClientRect();
+    return (t.clientX - r.left) * (W / r.width);
+  }
+  cv.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;               // left button / touch only
+    dragX = cvX(e);
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* not capturable */ }
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (dragX === null) return;
+    const x = cvX(e);
+    px += (x - dragX) * 1.4;
+    px = Math.max(ROAD_L + PW / 2 + 4, Math.min(ROAD_R - PW / 2 - 4, px));
+    dragX = x;
+  });
+  const endDrag = () => { dragX = null; };
+  cv.addEventListener('pointerup', endDrag);
+  cv.addEventListener('pointercancel', endDrag);
+
+  btnStart.addEventListener('click', start);
+  reset();
+  draw(0);
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

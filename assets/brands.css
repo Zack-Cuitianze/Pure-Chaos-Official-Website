@@ -1,0 +1,257 @@
+/* ============================================================
+   Pure Chaos — Brands page
+   Reuses tokens from styles.css (:root, --u, --glass-*, --ease-*).
+   Black / white only. Liquid-glass rectangular cards.
+   ============================================================ */
+
+.brands {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: calc(1320 * var(--u));
+  margin: 0 auto;
+  padding:
+    calc(210 * var(--u))
+    calc(100 * var(--u))
+    calc(160 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  perspective: 1200px;
+}
+
+.brands__title {
+  margin: 0;
+  color: var(--fg);
+  font-weight: 700;
+  font-size: clamp(40px, calc(96 * var(--u)), 110px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+  text-align: center;
+  text-wrap: balance;
+  transform:
+    translateY(var(--idle-y, 0px))
+    rotateX(var(--rot-x, 0deg))
+    rotateY(var(--rot-y, 0deg));
+  transform-style: preserve-3d;
+  will-change: transform;
+  animation: title-in 1100ms both;
+}
+
+.brands__list {
+  width: 100%;
+  max-width: calc(1120 * var(--u));
+  min-width: min(100%, 560px);
+  margin-top: calc(72 * var(--u));
+  display: flex;
+  flex-direction: column;
+  gap: calc(32 * var(--u));
+}
+
+/* ---- liquid-glass rectangular card ---- */
+.brand-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: calc(48 * var(--u));
+  width: 100%;
+  min-height: calc(184 * var(--u));
+  padding:
+    calc(40 * var(--u))
+    calc(56 * var(--u));
+  border-radius: calc(28 * var(--u));
+  border: 0.5px solid var(--glass-border);
+  background: var(--glass-surface);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    var(--shadow-contact);
+  transition:
+    transform 280ms var(--ease-fluid),
+    box-shadow 280ms var(--ease-fluid),
+    background 280ms var(--ease-fluid),
+    border-color 280ms var(--ease-fluid);
+  animation: card-in 900ms both;
+}
+
+.brand-card:nth-child(2) { animation-delay: 90ms; }
+.brand-card:nth-child(3) { animation-delay: 180ms; }
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    translate: 0 calc(24 * var(--u));
+    scale: 0.985;
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+    filter: blur(0);
+  }
+}
+
+.brand-card:hover {
+  transform: translateY(-2px);
+  background: var(--glass-surface-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    var(--shadow-elevate);
+}
+
+.brand-card:active {
+  transform: translateY(0) scale(0.995);
+  background: var(--glass-surface-active);
+  border-color: var(--glass-border-active);
+  transition-duration: 80ms;
+}
+
+/* ---- left: logo slot — optical left-aligned system ----
+   Fixed slot + left anchor + height-based sizing.
+   - Same slot origin for all 3 cards => vertical left edges align.
+   - Logos size by visual height (not width) => uniform perceived size.
+   - Per-logo height compensates aspect differences (esp. wide wordmark).
+   Fine-tune via --logo-dx / --logo-dy if a glyph has side bearings.
+*/
+.brand-card__logo {
+  flex: 0 0 calc(360 * var(--u));
+  width: calc(360 * var(--u));
+  height: calc(120 * var(--u));
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.brand-card__logo img {
+  display: block;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  object-fit: contain;
+  object-position: left center;
+  transform: translate(var(--logo-dx, 0), var(--logo-dy, 0));
+  filter:
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 20px rgba(184, 191, 232, 0.15));
+}
+
+/* Zack — compact square-ish mark (60:30, aspect 2.0) */
+.brand-card__logo--zack img {
+  height: calc(76 * var(--u));
+  max-width: calc(300 * var(--u));
+}
+
+/* Why — tall spiky mark (456:164, aspect 2.78), slightly reduced
+   so pointed ascenders don't look oversized */
+.brand-card__logo--why img {
+  height: calc(70 * var(--u));
+  max-width: calc(320 * var(--u));
+}
+
+/* Unparalleled — extra-wide wordmark (1024:126, aspect 8.1).
+   Smaller height, full slot width, to match optical weight. */
+.brand-card__logo--unparalleled img {
+  height: calc(46 * var(--u));
+  max-width: calc(360 * var(--u));
+  width: 100%;
+}
+
+/* if SVG not yet dropped in, keep layout, show faint alt text */
+.brand-card__logo img:not([src]),
+.brand-card__logo img[src=""] {
+  display: none;
+}
+
+/* ---- right: text, strictly right-aligned ---- */
+.brand-card__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(12 * var(--u));
+  text-align: right;
+}
+
+.brand-card__name {
+  margin: 0;
+  color: var(--fg);
+  font-weight: 650;
+  font-size: clamp(22px, calc(34 * var(--u)), 36px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.brand-card__desc {
+  margin: 0;
+  margin-left: auto;
+  max-width: 46ch;
+  color: var(--fg-muted);
+  font-size: clamp(13px, calc(17 * var(--u)), 18px);
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 860px) {
+  .brands {
+    padding: 152px 20px 110px;
+    perspective: none;
+  }
+  .brands__title {
+    font-size: clamp(34px, 9vw, 52px);
+  }
+  .brands__list {
+    margin-top: 36px;
+    gap: 16px;
+    min-width: 0;
+  }
+  .brand-card {
+    gap: 20px;
+    min-height: 0;
+    padding: 24px 22px;
+    border-radius: 22px;
+  }
+  .brand-card__logo {
+    flex-basis: 132px;
+    width: 132px;
+    height: 72px;
+  }
+  .brand-card__logo--zack img { height: 34px; max-width: 124px; }
+  .brand-card__logo--why img { height: 32px; max-width: 132px; }
+  .brand-card__logo--unparalleled img { height: 22px; max-width: 132px; }
+  .brand-card__desc {
+    max-width: 32ch;
+  }
+}
+
+/* ============================================================
+   Reduced motion / fallbacks (mirror styles.css)
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .brand-card,
+  .brands__title {
+    animation: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .brand-card {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+}
+
+@media (forced-colors: active) {
+  .brand-card { border: 1px solid currentColor; background: Canvas; }
+  .brand-card__name, .brand-card__desc { color: CanvasText; }
+}

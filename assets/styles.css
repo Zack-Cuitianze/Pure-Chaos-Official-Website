@@ -1,0 +1,1038 @@
+/* ============================================================
+   Pure Chaos — Dark Space / Minimal Glass
+   Geometry source of truth: 1920 x 150 nav canvas.
+   1 unit = 100vw / 1920, clamped.
+   ============================================================ */
+
+@font-face {
+  font-family: 'Geist';
+  src: url('fonts/geist-variable.woff2') format('woff2-variations'),
+       url('fonts/geist-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ---- scale ---- */
+  --u: clamp(0.58px, calc(100vw / 1920), 1.2px);
+
+  /* ---- dark space palette ---- */
+  --bg: #050508;              /* near black */
+  --bg-elevated: #0a0a10;     /* subtle elevation */
+  --fg: #ffffff;              /* pure white text */
+  --fg-muted: rgba(255, 255, 255, 0.54);
+  --fg-faint: rgba(255, 255, 255, 0.28);
+
+  --lavender: #b8bfe8;        /* muted lavender accent */
+  --lavender-strong: #c7cbf5;
+  --lavender-dim: rgba(184, 191, 232, 0.18);
+
+  /* ---- glass tokens (dark mode) ---- */
+  --glass-blur: saturate(180%) blur(20px);
+  --glass-blur-strong: saturate(200%) blur(32px);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-hover: rgba(255, 255, 255, 0.18);
+  --glass-border-active: rgba(255, 255, 255, 0.30);
+  --glass-surface: rgba(255, 255, 255, 0.03);
+  --glass-surface-hover: rgba(255, 255, 255, 0.06);
+  --glass-surface-active: rgba(255, 255, 255, 0.10);
+
+  /* shadows - subtle, atmospheric */
+  --shadow-contact: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-elevate: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 40px rgba(184, 191, 232, 0.08);
+
+  /* motion */
+  --ease-fluid: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --ease-expo-out: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --font-stack: 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Display',
+                'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-stack);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   Ambient — single deep glow, barely there
+   ============================================================ */
+.ambient {
+  position: fixed;
+  inset: -10%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(50vw 40vw at 50% -20%, rgba(184, 191, 232, 0.12), transparent 65%),
+    radial-gradient(60vw 50vw at 80% 120%, rgba(184, 191, 232, 0.06), transparent 70%);
+  animation: ambient-drift 30s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-drift {
+  from { transform: scale(1) translate3d(0, 0, 0); opacity: 0.7; }
+  to   { transform: scale(1.08) translate3d(2vw, -2vh, 0); opacity: 1; }
+}
+
+/* ============================================================
+   Glass curtain wall — frosted bricks + water light (home only)
+
+   The pointer is dragged across the whole page to move the water,
+   so incidental text/image selection on the home page would fight
+   it. Selection stays available on every other page.
+   ============================================================ */
+.home .nav,
+.home .hero,
+.home .footer {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.home .nav img,
+.home .hero img,
+.home .footer img {
+  -webkit-user-drag: none;
+}
+
+/* ---- glass curtain wall: background only, never over the cursor ---- */
+.glass-wall {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.glass-wall__canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- optional page artwork: assets/main page background.(svg|jpg|...) ----
+   The display-size derivative is referenced from the very first paint, so
+   the browser decodes it while the page loads (no late rasterisation stall).
+   With no artwork the layer simply paints nothing and the page stays black.
+   .has-art is added by the probe once the artwork is confirmed; it is only
+   used to raise the footer scrim. */
+.page-art {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background-image: url("main page background display.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.page-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(5, 5, 8, 0.58), rgba(5, 5, 8, 0.34) 42%, rgba(5, 5, 8, 0.64) 100%),
+    radial-gradient(120% 80% at 50% 26%, rgba(5, 5, 8, 0.06), rgba(5, 5, 8, 0.52) 100%);
+}
+
+/* .has-art is set once the artwork is confirmed: it only reveals the
+   footer scrim — the artwork layer is already painted behind the page. */
+
+/* ---- liquid-glass footer scrim: only over the artwork ---- */
+.footer-glass {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  border-radius: 18px 18px 0 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.014) 32%, rgba(5, 6, 9, 0.28) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -24px 40px rgba(0, 0, 0, 0.22);
+  -webkit-backdrop-filter: blur(20px) saturate(135%) brightness(0.92);
+  backdrop-filter: blur(20px) saturate(135%) brightness(0.92);
+  transition: opacity 600ms ease, visibility 600ms ease;
+}
+
+body.has-art .footer-glass {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media print {
+  .glass-wall,
+  .page-art,
+  .footer-glass { display: none; }
+}
+
+/* ============================================================
+   Navigation — transparent, no background
+   ============================================================ */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  height: calc(150 * var(--u));
+  min-height: 88px;
+  /* no background, no border, no blur — completely transparent */
+  pointer-events: none; /* clicks pass through to inner */
+}
+
+.nav__inner {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding-left: calc(100 * var(--u));
+  padding-right: calc(100 * var(--u));
+  gap: calc(100 * var(--u));
+  pointer-events: auto;
+}
+
+/* ============================================================
+   Logo — minimal, subtle lift on hover
+   ============================================================ */
+.brand {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  height: calc(50 * var(--u));
+  text-decoration: none;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 240ms var(--ease-fluid), transform 420ms var(--ease-spring);
+}
+.brand:hover {
+  opacity: 0.7;
+  transform: translateY(-2px) scale(1.02);
+}
+.brand:active {
+  opacity: 0.5;
+  transform: translateY(0) scale(0.98);
+  transition-duration: 100ms;
+}
+.brand:focus-visible {
+  outline: 1px solid var(--lavender);
+  outline-offset: 4px;
+  border-radius: calc(12 * var(--u));
+}
+
+.brand__mark {
+  height: calc(46 * var(--u));
+  width: auto;
+  max-width: calc(260 * var(--u));
+  display: block;
+  object-fit: contain;
+  object-position: left center;
+  filter:
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 20px rgba(184, 191, 232, 0.15));
+  transition: filter 320ms var(--ease-fluid);
+}
+.brand:hover .brand__mark {
+  filter:
+    drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 30px rgba(184, 191, 232, 0.25));
+}
+
+/* ============================================================
+   Buttons — elegant dark glass pills
+   Single surface, hairline border, subtle inner highlight
+   ============================================================ */
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: calc(32 * var(--u));
+}
+
+.glass-btn {
+  --btn-h: calc(48 * var(--u));
+  --btn-w: calc(180 * var(--u));
+
+  position: relative;
+  width: var(--btn-w);
+  height: var(--btn-h);
+  min-width: 112px;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  border: 0.5px solid var(--glass-border);
+
+  /* single frosted surface */
+  background: var(--glass-surface);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+
+  /* minimal light: top inner highlight only */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    var(--shadow-contact);
+
+  color: var(--fg);
+  font-family: inherit;
+  font-weight: 500;
+  font-size: clamp(13px, calc(17 * var(--u)), 19px);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  will-change: transform, box-shadow, background, border-color;
+  transition:
+    transform 280ms var(--ease-fluid),
+    box-shadow 280ms var(--ease-fluid),
+    background 280ms var(--ease-fluid),
+    border-color 280ms var(--ease-fluid);
+}
+
+.glass-btn > span {
+  position: relative;
+  z-index: 1;
+}
+
+/* hover: brighter surface, stronger border, subtle lift */
+.glass-btn:hover {
+  transform: translateY(-1.5px);
+  background: var(--glass-surface-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    var(--shadow-elevate);
+}
+
+/* active: press in, brighter */
+.glass-btn:active {
+  transform: translateY(0) scale(0.97);
+  background: var(--glass-surface-active);
+  border-color: var(--glass-border-active);
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    var(--shadow-contact);
+  transition-duration: 80ms;
+}
+
+/* focus: clean ring */
+.glass-btn:focus-visible {
+  outline: none;
+  border-color: var(--lavender);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 3px rgba(184, 191, 232, 0.25);
+}
+
+/* ============================================================
+   Hero — entrance + character physics
+   ============================================================ */
+.hero {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
+  padding: calc(150 * var(--u)) calc(100 * var(--u)) calc(150 * var(--u));
+  perspective: 1200px;
+}
+
+.hero__title {
+  margin: 0;
+  /* decorative headline: dragging the fluid background must not select it */
+  -webkit-user-select: none;
+  user-select: none;
+  font-weight: 700;
+  font-size: clamp(56px, calc(168 * var(--u)), 210px);
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+  color: var(--fg);
+  text-align: center;
+  white-space: nowrap;
+
+  transform:
+    translateY(var(--idle-y, 0px))
+    rotateX(var(--rot-x, 0deg))
+    rotateY(var(--rot-y, 0deg));
+  transform-style: preserve-3d;
+  will-change: transform;
+
+  animation: title-in 1250ms both;
+}
+
+@keyframes title-in {
+  0% {
+    opacity: 0;
+    translate: 0 calc(34 * var(--u));
+    scale: 0.965;
+    filter: blur(8px);
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  38% {
+    opacity: 0.9;
+    translate: 0 calc(-7 * var(--u));
+    scale: 1.012;
+    filter: blur(0);
+    animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  }
+  70% {
+    opacity: 1;
+    translate: 0 calc(2.5 * var(--u));
+    scale: 0.997;
+    animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+    filter: blur(0);
+  }
+}
+
+/* characters: proximity lift */
+.ch {
+  display: inline-block;
+  transform:
+    translateY(calc(var(--k, 0) * -0.055em))
+    scale(calc(1 + var(--k, 0) * 0.045));
+  text-shadow:
+    0 calc(var(--k, 0) * 0.04em) calc(var(--k, 0) * 0.08em) rgba(0, 0, 0, calc(var(--k, 0) * 0.6)),
+    0 calc(var(--k, 0) * 0.01em) calc(var(--k, 0) * 0.02em) rgba(0, 0, 0, calc(var(--k, 0) * 0.4));
+  will-change: transform;
+}
+
+/* word containers: breaks happen between words, never inside one */
+.ch-word {
+  display: inline-block;
+}
+
+/* ============================================================
+   Footer — Board.svg: black bar, logo left, 2 link columns,
+   grey game tile right. Geist, monochrome, no new colors.
+   ============================================================ */
+.footer {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: calc(50 * var(--u)) calc(100 * var(--u)) calc(40 * var(--u));
+  color: var(--fg);
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.footer__inner {
+  position: relative;
+  z-index: 1;
+  max-width: calc(1720 * var(--u));
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: calc(80 * var(--u));
+}
+
+.footer__brand {
+  flex: 0 0 auto;
+  margin-right: auto;
+  /* bleed to the viewport's left/bottom edges = fill the corner */
+  margin-left: calc(-100 * var(--u));
+  margin-bottom: calc(-40 * var(--u));
+  display: inline-flex;
+  align-items: flex-end;
+  text-decoration: none;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  will-change: transform, opacity;
+  transition:
+    opacity 240ms var(--ease-fluid),
+    transform 480ms var(--ease-spring),
+    filter 320ms var(--ease-fluid);
+}
+
+.footer__brand:hover {
+  opacity: 1;
+  transform: translateY(calc(-6 * var(--u))) scale(1.015);
+}
+
+.footer__brand:active {
+  transform: translateY(0) scale(0.99);
+  transition-duration: 100ms;
+}
+.footer__brand:focus-visible {
+  outline: 1px solid var(--lavender);
+  outline-offset: 4px;
+  border-radius: calc(12 * var(--u));
+}
+
+.footer__brand img {
+  height: calc(200 * var(--u));
+  width: auto;
+  max-width: calc(880 * var(--u));
+  display: block;
+  object-fit: contain;
+  object-position: left bottom;
+  filter:
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 20px rgba(184, 191, 232, 0.15));
+  transition: filter 320ms var(--ease-fluid);
+}
+
+.footer__brand:hover img {
+  filter:
+    drop-shadow(0 6px 16px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 42px rgba(184, 191, 232, 0.35));
+}
+
+.footer__cols {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(110 * var(--u));
+}
+
+.footer__col {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(8 * var(--u));
+}
+
+.footer__col a {
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: normal;
+  text-decoration: none;
+  white-space: nowrap;
+  opacity: 0.92;
+  transition: opacity 200ms var(--ease-fluid);
+}
+
+.footer__col a:hover { opacity: 0.6; }
+.footer__col a:focus-visible {
+  outline: 1px solid var(--lavender);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.footer__game {
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 auto;
+  width: calc(212 * var(--u));
+  min-width: 150px;
+  height: calc(150 * var(--u));
+  min-height: 110px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: calc(18 * var(--u)) calc(20 * var(--u));
+  background: #292929;
+  color: var(--fg);
+  font-size: clamp(15px, calc(18 * var(--u)), 19px);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: normal;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 240ms var(--ease-fluid), opacity 240ms var(--ease-fluid);
+}
+
+.footer__game:hover { background: #383838; }
+.footer__game:focus-visible {
+  outline: 1px solid var(--lavender);
+  outline-offset: 3px;
+}
+
+/* ---- pixel-arcade hover fx: scanlines + invader + INSERT COIN ---- */
+.game__fx {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms var(--ease-fluid);
+}
+
+.footer__game:hover .game__fx,
+.footer__game:focus-visible .game__fx { opacity: 1; }
+
+/* CRT scanlines over the whole tile */
+.game__fx::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.07) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* 11x8 space-invader sprite, drawn pixel-by-pixel via box-shadow */
+.game__invader {
+  position: absolute;
+  top: calc(18 * var(--u));
+  left: calc(20 * var(--u));
+  width: 1em;
+  height: 1em;
+  font-size: calc(4 * var(--u));
+  color: #fff;
+  box-shadow:
+    2em 0, 8em 0,
+    3em 1em, 7em 1em,
+    2em 2em, 3em 2em, 4em 2em, 5em 2em, 6em 2em, 7em 2em, 8em 2em,
+    1em 3em, 2em 3em, 4em 3em, 5em 3em, 6em 3em, 8em 3em, 9em 3em,
+    0 4em, 1em 4em, 2em 4em, 3em 4em, 4em 4em, 5em 4em, 6em 4em,
+    7em 4em, 8em 4em, 9em 4em, 10em 4em,
+    0 5em, 2em 5em, 3em 5em, 4em 5em, 5em 5em, 6em 5em, 7em 5em,
+    8em 5em, 10em 5em,
+    0 6em, 2em 6em, 8em 6em, 10em 6em,
+    3em 7em, 4em 7em, 6em 7em, 7em 7em;
+  animation: invader-bob 0.8s steps(2) infinite alternate;
+}
+
+@keyframes invader-bob {
+  from { transform: translateY(0); }
+  to { transform: translateY(calc(-1em)); }
+}
+
+/* blinking arcade prompt */
+.game__coin {
+  position: absolute;
+  left: calc(20 * var(--u));
+  bottom: calc(52 * var(--u));
+  color: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  white-space: nowrap;
+  animation: coin-blink 1.1s steps(1) infinite;
+}
+
+@keyframes coin-blink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0.15; }
+}
+
+.game__label { position: relative; z-index: 1; }
+
+.game__arrow {
+  display: inline-block;
+  margin-left: 0.35em;
+  transition: transform 240ms var(--ease-fluid);
+}
+
+.footer__game:hover .game__arrow { transform: translateX(3px); }
+
+/* ============================================================
+   Static pages — about / articles
+   ============================================================ */
+.page {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: calc(1320 * var(--u));
+  margin: 0 auto;
+  padding:
+    calc(250 * var(--u))
+    calc(100 * var(--u))
+    calc(180 * var(--u));
+  display: flex;
+  flex-direction: column;
+  gap: calc(46 * var(--u));
+}
+
+.page__kicker {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.page__title {
+  margin: 0;
+  max-width: 20ch;
+  font-weight: 700;
+  font-size: clamp(32px, calc(76 * var(--u)), 82px);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+  animation: title-in 1100ms both;
+}
+
+.page__lead {
+  margin: 0;
+  max-width: 50ch;
+  color: var(--fg-muted);
+  font-size: clamp(16px, calc(21 * var(--u)), 22px);
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+
+.page__cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(64 * var(--u));
+  max-width: calc(1080 * var(--u));
+}
+
+.page__h2 {
+  margin: 0 0 calc(14 * var(--u));
+  font-size: clamp(15px, calc(18 * var(--u)), 19px);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.page__body {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--fg-muted);
+  font-size: clamp(14px, calc(16 * var(--u)), 17px);
+  line-height: 1.75;
+  text-wrap: pretty;
+}
+
+.page__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(28 * var(--u));
+  padding-top: calc(42 * var(--u));
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.page__cta-label {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: clamp(14px, calc(16 * var(--u)), 17px);
+}
+
+/* ---- what we believe ---- */
+.beliefs {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.65fr);
+  gap: calc(52 * var(--u));
+  max-width: calc(1080 * var(--u));
+  padding-top: calc(46 * var(--u));
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.beliefs__title {
+  margin: 0;
+  font-size: clamp(22px, calc(30 * var(--u)), 32px);
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.beliefs__body {
+  display: flex;
+  flex-direction: column;
+  gap: calc(24 * var(--u));
+}
+
+/* six liquid-glass pillars */
+.beliefs__grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(14 * var(--u));
+  margin: calc(6 * var(--u)) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.beliefs__card {
+  display: grid;
+  place-items: center;
+  min-height: calc(168 * var(--u));
+  padding: calc(28 * var(--u)) calc(24 * var(--u));
+  text-align: center;
+  border-radius: calc(22 * var(--u));
+  border: 0.5px solid var(--glass-border);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028) 46%, rgba(255, 255, 255, 0.007));
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -20px 34px rgba(0, 0, 0, 0.18),
+    var(--shadow-contact);
+  transition:
+    transform 300ms var(--ease-fluid),
+    border-color 300ms var(--ease-fluid),
+    background 300ms var(--ease-fluid);
+}
+
+.beliefs__card:hover {
+  transform: translateY(-2px);
+  border-color: var(--glass-border-hover);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.090), rgba(255, 255, 255, 0.032) 46%, rgba(255, 255, 255, 0.008));
+}
+
+.beliefs__card-title {
+  margin: 0;
+  font-size: clamp(19px, calc(23 * var(--u)), 24px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.beliefs__quote {
+  margin: calc(6 * var(--u)) 0 0;
+}
+
+.beliefs__quote p {
+  margin: 0;
+  max-width: 22ch;
+  font-size: clamp(25px, calc(36 * var(--u)), 42px);
+  font-weight: 550;
+  line-height: 1.16;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.beliefs__quote cite {
+  display: block;
+  margin-top: calc(16 * var(--u));
+  color: var(--fg-faint);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.beliefs__aside {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--fg-faint);
+  font-size: clamp(13px, calc(15 * var(--u)), 16px);
+  line-height: 1.65;
+}
+
+.beliefs__aside cite {
+  display: block;
+  margin-top: calc(8 * var(--u));
+  color: var(--fg-faint);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ---- article queue ---- */
+.entries {
+  max-width: calc(1080 * var(--u));
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.entry {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(32 * var(--u));
+  padding: calc(26 * var(--u)) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.entry__title {
+  margin: 0;
+  font-size: clamp(17px, calc(22 * var(--u)), 23px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.entry__meta {
+  flex: 0 0 auto;
+  color: var(--fg-faint);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.entry--soon .entry__title { color: var(--fg-muted); }
+
+.page__note {
+  margin: 0;
+  color: var(--fg-faint);
+  font-size: clamp(13px, calc(15 * var(--u)), 16px);
+}
+
+/* active nav pill — shared by every static page */
+.glass-btn[aria-current="page"] {
+  background: var(--glass-surface-active);
+  border-color: var(--glass-border-active);
+}
+
+@media (max-width: 860px) {
+  .page {
+    padding: 152px 24px 110px;
+    gap: 32px;
+  }
+  .page__title { max-width: none; font-size: clamp(30px, 9vw, 44px); }
+  .page__cols { grid-template-columns: 1fr; gap: 32px; }
+  .beliefs { grid-template-columns: 1fr; gap: 20px; padding-top: 28px; }
+  .beliefs__quote p { max-width: none; font-size: clamp(24px, 7vw, 34px); }
+  .beliefs__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .beliefs__card { min-height: 104px; padding: 20px 16px; border-radius: 18px; }
+  .page__cta { gap: 20px; }
+  .entry {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 860px) {
+  :root { --u: 0.7px; }
+
+  .nav {
+    height: auto;
+    min-height: 0;
+    padding: 18px 24px 20px;
+    padding-top: max(18px, env(safe-area-inset-top));
+  }
+  .nav__inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .brand { height: 38px; }
+  .brand__mark { height: 32px; }
+  .nav__links { gap: 10px; flex-wrap: wrap; }
+  .glass-btn {
+    width: auto;
+    height: 42px;
+    min-width: 0;
+    padding: 0 18px;
+    font-size: 14px;
+  }
+  .hero {
+    /* clear the fixed nav (logo + wrapped pills ≈132px on small screens) */
+    padding: 152px 24px 120px;
+    perspective: none;
+  }
+  .hero__title {
+    white-space: normal;
+    /* the desktop lockup is 117.6px tall on small screens; scale it down so
+       "Hello, world.." fits on two centred lines instead of three */
+    font-size: clamp(44px, 23vw, 118px);
+  }
+  .footer { padding: 36px 24px 32px; }
+  .footer__inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 28px;
+  }
+  .footer__brand {
+    margin-right: 0;
+    margin-left: 0;
+    margin-bottom: 0;
+    align-self: flex-start;
+  }
+  .footer__brand img { height: 84px; max-width: 100%; }
+  .footer__cols {
+    flex-wrap: wrap;
+    gap: 28px 40px;
+  }
+  .footer__col a { white-space: normal; }
+  .footer__game {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    padding: 20px;
+  }
+}
+
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .ambient { animation: none; }
+}
+
+/* ============================================================
+   Fallback without backdrop-filter
+   ============================================================ */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  .glass-btn:hover { background: rgba(255, 255, 255, 0.14); }
+  .glass-btn:active { background: rgba(255, 255, 255, 0.20); }
+  .ambient { display: none; }
+}
+
+/* ============================================================
+   Forced colors
+   ============================================================ */
+/* ============================================================
+   Selection — custom highlight color
+   ============================================================ */
+::selection {
+  background-color: #7073ff;
+  color: #ffffff;
+}
+
+/* Firefox */
+::-moz-selection {
+  background-color: #7073ff;
+  color: #ffffff;
+}
+
+@media (forced-colors: active) {
+  .glass-btn { border: 1px solid currentColor; background: Canvas; }
+  .glass-btn:hover { background: Highlight; color: HighlightText; }
+  .brand__mark { filter: none; }
+  .ambient { display: none; }
+  .footer__game { border: 1px solid currentColor; background: Canvas; color: CanvasText; }
+  .game__invader, .game__coin { color: CanvasText; }
+}

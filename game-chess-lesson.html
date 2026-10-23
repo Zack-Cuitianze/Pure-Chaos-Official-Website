@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How chess works — Pure Chaos</title>
+<meta name="description" content="Pure Chaos — a two-minute chess lesson: the board, the pieces, capturing, check and the three special moves.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-title" content="Pure Chaos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/vt323.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/games.css">
+</head>
+<body class="arcade">
+
+<div class="ambient" aria-hidden="true"></div>
+
+<header class="nav" role="banner">
+  <div class="nav__inner">
+    <a class="brand" href="index.html" aria-label="Pure Chaos — home">
+      <img class="brand__mark" src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a class="glass-btn" href="brands.html"><span>brands</span></a>
+      <a class="glass-btn" href="about.html"><span>about us</span></a>
+      <a class="glass-btn" href="articles.html"><span>articles</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="lesson">
+  <a class="crumbs" href="game-chess.html">&lt;- CHESS</a>
+  <p class="arcade-kicker">Pure Chaos // Chess Lesson</p>
+  <h1 class="lesson__title">How chess works.</h1>
+  <p class="lesson__lead">Six short sections, no jargon. Read it once, then play the beginner level — the board will show you every legal move.</p>
+
+  <!-- 1 ------------------------------------------------------ -->
+  <section class="lesson__section" aria-labelledby="s-board">
+    <div class="lesson__art">
+      <div class="mini-board" data-demo="board" aria-hidden="true"></div>
+    </div>
+    <div class="lesson__body">
+      <h2 class="lesson__h" id="s-board"><span>01</span> The board</h2>
+      <p>Sixty-four squares, eight by eight, taking turns light and dark. <b>White always moves first</b>, then players alternate — one move each.</p>
+      <p>Columns are called files (a–h, left to right). Rows are ranks (1–8, from White's side). The board starts with White's pieces on ranks 1–2 and Black's on ranks 7–8.</p>
+    </div>
+  </section>
+
+  <!-- 2 ------------------------------------------------------ -->
+  <section class="lesson__section lesson__section--wide" aria-labelledby="s-pieces">
+    <div class="lesson__body">
+      <h2 class="lesson__h" id="s-pieces"><span>02</span> The pieces</h2>
+      <p>Each piece moves in its own pattern. Dots show every square the piece could move to on an empty board.</p>
+    </div>
+    <div class="piece-grid" id="pieceGrid"></div>
+  </section>
+
+  <!-- 3 ------------------------------------------------------ -->
+  <section class="lesson__section" aria-labelledby="s-capture">
+    <div class="lesson__art">
+      <div class="mini-board" data-demo="capture" aria-hidden="true"></div>
+    </div>
+    <div class="lesson__body">
+      <h2 class="lesson__h" id="s-capture"><span>03</span> Capturing</h2>
+      <p>You take an enemy piece by <b>landing on its square</b>. The knight below can jump to d5 and take the black pawn — the ring marks a capture.</p>
+      <p>You can never land on your own pieces, and you never jump over anything except with the knight.</p>
+    </div>
+  </section>
+
+  <!-- 4 ------------------------------------------------------ -->
+  <section class="lesson__section lesson__section--wide" aria-labelledby="s-check">
+    <div class="lesson__body">
+      <h2 class="lesson__h" id="s-check"><span>04</span> Check and checkmate</h2>
+      <p>When your king is attacked, that is <b>check</b> — you must answer it immediately: move the king, block the attack, or take the attacker.</p>
+      <p>If the king is attacked and there is no legal answer, that is <b>checkmate</b>: the game is over. The second board shows a classic back-rank mate.</p>
+    </div>
+    <div class="lesson__boards">
+      <figure class="lesson__figure">
+        <div class="mini-board" data-demo="check" aria-hidden="true"></div>
+        <figcaption>Check — the queen attacks along the diagonal</figcaption>
+      </figure>
+      <figure class="lesson__figure">
+        <div class="mini-board" data-demo="mate" aria-hidden="true"></div>
+        <figcaption>Checkmate — the king has no escape</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 5 ------------------------------------------------------ -->
+  <section class="lesson__section lesson__section--wide" aria-labelledby="s-special">
+    <div class="lesson__body">
+      <h2 class="lesson__h" id="s-special"><span>05</span> The three special moves</h2>
+      <p>These catch out almost every new player. All three are always available — the game handles them for you.</p>
+    </div>
+    <div class="lesson__boards">
+      <figure class="lesson__figure">
+        <div class="mini-board" data-demo="castle" aria-hidden="true"></div>
+        <figcaption><b>Castling</b> — king two squares towards the rook, rook jumps over. Only if neither has moved and nothing is in the way.</figcaption>
+      </figure>
+      <figure class="lesson__figure">
+        <div class="mini-board" data-demo="ep" aria-hidden="true"></div>
+        <figcaption><b>En passant</b> — a pawn that just ran two squares can be taken as if it moved one.</figcaption>
+      </figure>
+      <figure class="lesson__figure">
+        <div class="mini-board" data-demo="promo" aria-hidden="true"></div>
+        <figcaption><b>Promotion</b> — a pawn reaching the last rank becomes a queen, rook, bishop or knight.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 6 ------------------------------------------------------ -->
+  <section class="lesson__section" aria-labelledby="s-end">
+    <div class="lesson__art">
+      <div class="mini-board" data-demo="drill" role="group" aria-label="Knight move practice board"></div>
+      <p class="lesson__drill" id="drillMsg" aria-live="polite">Click any square the knight can move to.</p>
+    </div>
+    <div class="lesson__body">
+      <h2 class="lesson__h" id="s-end"><span>06</span> How a game ends</h2>
+      <ul class="lesson__list">
+        <li><b>Checkmate</b> — the king cannot escape. You win.</li>
+        <li><b>Time out</b> — in a timed game, run out of clock and you lose.</li>
+        <li><b>Stalemate</b> — no legal move, but not in check. Draw.</li>
+        <li><b>Draw</b> — not enough material, fifty quiet moves, or the same position three times.</li>
+      </ul>
+      <p class="lesson__note">That is everything you need. The beginner level plays slowly and the board highlights your options.</p>
+      <div class="lesson__cta">
+        <a class="btn-pixel" href="game-chess.html?level=beginner&amp;time=180&amp;inc=0">Start as beginner</a>
+        <a class="btn-pixel btn-pixel--ghost" href="game-chess.html">Choose a level</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer__inner">
+    <a class="footer__brand" href="index.html" aria-label="Pure Chaos — home">
+      <img src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="footer__cols" aria-label="Footer">
+      <ul class="footer__col">
+        <li><a href="#">Privacy policies</a></li>
+        <li><a href="#">Do not share my personal data</a></li>
+        <li><a href="#">Collaborations</a></li>
+        <li><a href="#">We care about your well-being</a></li>
+        <li><a href="#">Cookies</a></li>
+        <li><a href="#">Terms of use</a></li>
+        <li><a href="#">Sitemap</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Contact us</a></li>
+      </ul>
+      <ul class="footer__col">
+        <li><a href="#">Assets free for downloading</a></li>
+        <li><a href="#">Members of the club</a></li>
+        <li><a href="#">External links</a></li>
+        <li><a href="#">Contributors</a></li>
+      </ul>
+    </nav>
+    <a class="footer__game" href="games.html"><span class="game__fx" aria-hidden="true"><span class="game__invader"></span><span class="game__coin">INSERT COIN</span></span><span class="game__label">Game center <span class="game__arrow">-&gt;</span></span></a>
+  </div>
+</footer>
+
+<script src="assets/chess-engine.js"></script>
+<script>
+(() => {
+  'use strict';
+  const E = window.ChessEngine;
+  const GLYPH = { w: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' }, b: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' } };
+  const R = E.R;
+  const C = E.C;
+
+  /* position builder: [[square, type, color], ...] */
+  function build(pieces, opts) {
+    opts = opts || {};
+    const board = E.emptyBoard();
+    for (const [i, t, c] of pieces) board[i] = { t: t, c: c };
+    return {
+      board: board,
+      state: {
+        turn: opts.turn || 'w',
+        wk: !!(opts.rights && opts.rights.wk),
+        wq: !!(opts.rights && opts.rights.wq),
+        bk: !!(opts.rights && opts.rights.bk),
+        bq: !!(opts.rights && opts.rights.bq),
+        ep: opts.ep == null ? -1 : opts.ep,
+        half: 0,
+        full: 1,
+      },
+    };
+  }
+  const SQ = (name) => ('abcdefgh'.indexOf(name[0]) + (8 - Number(name[1])) * 8);
+
+  /* render one 8x8 mini board */
+  function miniBoard(el, pos, opts) {
+    opts = opts || {};
+    // lesson diagrams use pseudo-legal moves: cleaner boards (no need to place kings)
+    const moves = opts.from != null
+      ? E.pseudoMoves(pos.board, pos.state, opts.from)
+      : [];
+    const dots = new Set(moves.map((m) => m.to));
+    const caps = new Set(moves.filter((m) => pos.board[m.to] || m.ep).map((m) => m.to));
+    const marks = new Set(opts.marks || []);
+    const check = opts.check != null ? opts.check : -1;
+
+    el.innerHTML = '';
+    for (let i = 0; i < 64; i++) {
+      const sq = document.createElement('div');
+      sq.className = 'mini-sq ' + (((R(i) + C(i)) % 2 === 0) ? 'mini-sq--light' : 'mini-sq--dark');
+      const p = pos.board[i];
+      if (i === opts.from) sq.classList.add('mini-sq--sel');
+      if (i === check) sq.classList.add('mini-sq--check');
+      if (i === opts.doomed) sq.classList.add('mini-sq--doomed');
+      if (dots.has(i)) sq.classList.add(caps.has(i) ? 'mini-sq--cap' : 'mini-sq--move');
+      if (marks.has(i)) sq.classList.add('mini-sq--mark');
+      if (p) {
+        const s = document.createElement('span');
+        s.className = 'mini-piece ' + (p.c === 'w' ? 'pc-w' : 'pc-b');
+        s.textContent = GLYPH[p.c][p.t];
+        sq.appendChild(s);
+      }
+      el.appendChild(sq);
+    }
+  }
+
+  const DEMOS = {
+    board() {
+      // the real starting position, straight from the engine
+      miniBoard(document.querySelector('[data-demo="board"]'), E.startPos(), {});
+    },
+    pieces() {
+      const grid = document.getElementById('pieceGrid');
+      const kinds = [
+        { t: 'p', name: 'Pawn', sq: 'd4', text: 'One square forward (or two from its starting rank). Captures diagonally, one square.' },
+        { t: 'n', name: 'Knight', sq: 'd4', text: 'The only jumper: two squares one way, one square the other. Eight destinations.' },
+        { t: 'b', name: 'Bishop', sq: 'd4', text: 'Any distance along the diagonals. It never changes square color.' },
+        { t: 'r', name: 'Rook', sq: 'd4', text: 'Any distance along ranks and files. Devastating on open lines.' },
+        { t: 'q', name: 'Queen', sq: 'd4', text: 'Rook and bishop combined. The most powerful piece on the board.' },
+        { t: 'k', name: 'King', sq: 'd4', text: 'One square in any direction. Keep it safe — it can never be captured.' },
+      ];
+      for (const k of kinds) {
+        const card = document.createElement('div');
+        card.className = 'piece-card';
+        const boardEl = document.createElement('div');
+        boardEl.className = 'mini-board mini-board--small';
+        const pieces = [[SQ(k.sq), k.t, 'w']];
+        if (k.t === 'p') pieces.push([SQ('c5'), 'p', 'b'], [SQ('e5'), 'p', 'b']);
+        miniBoard(boardEl, build(pieces), { from: SQ(k.sq) });
+        const h = document.createElement('h3');
+        h.className = 'piece-card__name';
+        h.textContent = k.name;
+        const p = document.createElement('p');
+        p.className = 'piece-card__text';
+        p.textContent = k.text;
+        card.appendChild(boardEl);
+        card.appendChild(h);
+        card.appendChild(p);
+        grid.appendChild(card);
+      }
+    },
+    capture() {
+      const pos = build([[SQ('c3'), 'n', 'w'], [SQ('d5'), 'p', 'b']]);
+      miniBoard(document.querySelector('[data-demo="capture"]'), pos, { from: SQ('c3') });
+    },
+    check() {
+      const pos = build([[SQ('h5'), 'q', 'w'], [SQ('e8'), 'k', 'b'], [SQ('a1'), 'k', 'w']]);
+      // no move dots here: the dashed squares show the attacking line
+      miniBoard(document.querySelector('[data-demo="check"]'), pos, {
+        check: SQ('e8'), marks: [SQ('g6'), SQ('f7')],
+      });
+    },
+    mate() {
+      const pos = build([
+        [SQ('e8'), 'r', 'w'], [SQ('g8'), 'k', 'b'], [SQ('f7'), 'p', 'b'], [SQ('g7'), 'p', 'b'],
+        [SQ('h7'), 'p', 'b'], [SQ('a1'), 'k', 'w'],
+      ]);
+      miniBoard(document.querySelector('[data-demo="mate"]'), pos, { check: SQ('g8'), marks: [SQ('e8')] });
+    },
+    castle() {
+      const pos = build(
+        [[SQ('e1'), 'k', 'w'], [SQ('h1'), 'r', 'w'], [SQ('e8'), 'k', 'b']],
+        { rights: { wk: true } }
+      );
+      miniBoard(document.querySelector('[data-demo="castle"]'), pos, {
+        from: SQ('e1'), marks: [SQ('h1')],
+      });
+    },
+    ep() {
+      const pos = build([[SQ('e5'), 'p', 'w'], [SQ('d5'), 'p', 'b']], { ep: SQ('d6') });
+      miniBoard(document.querySelector('[data-demo="ep"]'), pos, { from: SQ('e5'), doomed: SQ('d5') });
+    },
+    promo() {
+      const pos = build([[SQ('b7'), 'p', 'w']]);
+      miniBoard(document.querySelector('[data-demo="promo"]'), pos, { from: SQ('b7'), marks: [SQ('b8')] });
+    },
+    drill() {
+      const pos = build([[SQ('b1'), 'n', 'w']]);
+      const el = document.querySelector('[data-demo="drill"]');
+      miniBoard(el, pos, { from: SQ('b1') });
+
+      const targets = new Set(E.pseudoMoves(pos.board, pos.state, SQ('b1')).map((m) => m.to));
+      const msg = document.getElementById('drillMsg');
+      let solved = false;
+      [...el.children].forEach((sq, i) => {
+        sq.style.cursor = 'pointer';
+        const trySquare = () => {
+          if (solved) return;
+          if (i === SQ('b1')) return;
+          if (targets.has(i)) {
+            solved = true;
+            sq.classList.add('mini-sq--correct');
+            msg.textContent = 'Correct — ' + E.sqName(i) + ' is a legal knight move. That is the whole idea.';
+          } else {
+            msg.textContent = 'Not this time — a knight moves two squares one way, one square the other. Try again.';
+          }
+        };
+        sq.addEventListener('click', trySquare);
+        // this is the one interactive diagram on the page: make it keyboard reachable
+        sq.tabIndex = 0;
+        sq.setAttribute('role', 'button');
+        sq.setAttribute('aria-label', 'Square ' + E.sqName(i) + ', try this square');
+        sq.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+            e.preventDefault();
+            trySquare();
+          }
+        });
+      });
+    },
+  };
+
+  for (const [name, fn] of Object.entries(DEMOS)) {
+    try { fn(); } catch (e) { console.error('demo failed:', name, e); }
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pure Chaos</title>
+<meta name="description" content="Pure Chaos — Hello, world..">
+<meta name="theme-color" content="#050508">
+<meta name="apple-mobile-web-app-title" content="Pure Chaos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body class="home">
+
+<!-- subtle atmospheric glow -->
+<div class="ambient" aria-hidden="true"></div>
+
+<!-- optional page artwork: visible only when a main page background image exists in assets/ -->
+<div class="page-art" aria-hidden="true"></div>
+
+<!-- liquid light overlay (decorative, index only) -->
+<div class="glass-wall" aria-hidden="true">
+  <canvas class="glass-wall__canvas" id="wallCv"></canvas>
+</div>
+
+<header class="nav" role="banner">
+  <div class="nav__inner">
+
+    <a class="brand" href="index.html" aria-label="Pure Chaos — home">
+      <img class="brand__mark" src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+
+    <nav class="nav__links" aria-label="Primary">
+      <a class="glass-btn" href="brands.html"><span>brands</span></a>
+      <a class="glass-btn" href="about.html"><span>about us</span></a>
+      <a class="glass-btn" href="articles.html"><span>articles</span></a>
+    </nav>
+
+  </div>
+</header>
+
+<main class="hero" data-tilt-zone>
+  <h1 class="hero__title" id="heroTitle" data-tilt-title>Hello, world..</h1>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer-glass" aria-hidden="true"></div>
+  <div class="footer__inner">
+    <a class="footer__brand" href="index.html" aria-label="Pure Chaos — home">
+      <img src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="footer__cols" aria-label="Footer">
+      <ul class="footer__col">
+        <li><a href="#">Privacy policies</a></li>
+        <li><a href="#">Do not share my personal data</a></li>
+        <li><a href="#">Collaborations</a></li>
+        <li><a href="#">We care about your well-being</a></li>
+        <li><a href="#">Cookies</a></li>
+        <li><a href="#">Terms of use</a></li>
+        <li><a href="#">Sitemap</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Contact us</a></li>
+      </ul>
+      <ul class="footer__col">
+        <li><a href="#">Assets free for downloading</a></li>
+        <li><a href="#">Members of the club</a></li>
+        <li><a href="#">External links</a></li>
+        <li><a href="#">Contributors</a></li>
+      </ul>
+    </nav>
+    <a class="footer__game" href="games.html"><span class="game__fx" aria-hidden="true"><span class="game__invader"></span><span class="game__coin">INSERT COIN</span></span><span class="game__label">Game center <span class="game__arrow">-&gt;</span></span></a>
+  </div>
+</footer>
+
+<script src="assets/interaction.js"></script>
+<script>
+/* optional page artwork -------------------------------------------------
+   Default (no file): the page stays exactly as it is — pure black.
+   Drop ONE of these into assets/ (first one found wins):
+     main page background.svg / .jpg / .jpeg / .png / .webp
+   When one exists, <body> gets .has-art: the image fades in behind the
+   page and the liquid-glass footer scrim comes up to keep it readable.
+
+   Performance: the display-size artwork is referenced by CSS from the very
+   first paint, so the browser decodes/paints it while the page is loading.
+   Detection (below) only toggles .has-art — it never swaps the background
+   after paint, which used to cause a ~300 ms rasterisation stall on file://.
+
+   A huge camera file (e.g. 9504x6336) is far too heavy to paint on load.
+   Keep a display-size sibling next to it:
+     assets/main page background display.jpg  (2560px, ~400 KB)
+   Regenerate it after editing the source with:
+     sips --resampleWidth 2560 -s format jpeg -s formatOptions 82 \
+       "assets/main page background.jpg" \
+       --out "assets/main page background display.jpg"
+   ---------------------------------------------------------------- */
+(() => {
+  const body = document.body;
+  const NAMES = [
+    'assets/main page background.svg',
+    'assets/main page background.jpg',
+    'assets/main page background.jpeg',
+    'assets/main page background.png',
+    'assets/main page background.webp',
+  ];
+  const displayPathFor = (srcPath) => srcPath.replace(/^(.*)(\.[a-z0-9]+)$/i, '$1 display.jpg');
+  const displayPath = displayPathFor(NAMES[0]);
+
+  let resolveProbe;
+  window.__pcProbe = new Promise((resolve) => { resolveProbe = resolve; });
+
+  const pageArt = document.querySelector('.page-art');
+  const useSource = (path) => {
+    /* rare fallback: no display derivative — point the layer at the source.
+       (the normal path is a direct url() in CSS so it loads on first paint) */
+    if (pageArt) pageArt.style.backgroundImage = 'url("' + encodeURI(path.replace(/^assets\//, '')) + '")';
+  };
+  const confirm = (path) => {
+    window.__pcArtPath = path;
+    if (path !== displayPath) useSource(path);   /* derivative missing: use the source */
+    body.classList.add('has-art');
+    resolveProbe(true);
+  };
+
+  if (location.protocol === 'file:') {
+    /* file:// has no HEAD: probe with a preload link (fetch only, no decode) */
+    const queue = [displayPath].concat(NAMES);
+    let i = 0;
+    const tryNext = () => {
+      if (i >= queue.length) { resolveProbe(false); return; }
+      const path = queue[i++];
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.onload = () => confirm(path);
+      link.onerror = tryNext;
+      link.href = encodeURI(path);
+      document.head.appendChild(link);
+    };
+    tryNext();
+    return;
+  }
+
+  const lastModified = (path) => fetch(encodeURI(path), { method: 'HEAD', cache: 'no-store' })
+    .then((res) => (res.ok ? (res.headers.get('last-modified') || '') : null))
+    .catch(() => null);
+  const pickDisplay = async (srcPath) => {
+    const disp = displayPathFor(srcPath);
+    const res = await Promise.all([lastModified(srcPath), lastModified(disp)]);
+    if (!res[1]) return srcPath;
+    if (!res[0]) return disp;
+    const sTime = Date.parse(res[0]);
+    const dTime = Date.parse(res[1]);
+    if (isNaN(sTime) || isNaN(dTime)) return disp;
+    return dTime < sTime - 1000 ? srcPath : disp;   /* stale derivative -> source */
+  };
+  (async () => {
+    for (let i = 0; i < NAMES.length; i++) {
+      const ok = await fetch(encodeURI(NAMES[i]), { method: 'HEAD', cache: 'no-store' })
+        .then((res) => res.ok)
+        .catch(() => false);
+      if (!ok) continue;
+      confirm(await pickDisplay(NAMES[i]));
+      return;
+    }
+    resolveProbe(false);
+  })();
+})();
+</script>
+<script>
+/* ============================================================
+   Pure Chaos — liquid light (index only)
+   ------------------------------------------------------------
+   The artwork is the background; this layer adds nothing but light.
+   A soft point light follows the pointer and runs across the scene
+   like water: slow sheets of light drift, dragging leaves a pale
+   trail and a click swells the glow. Nothing is drawn on the
+   cursor. Decorative: aria-hidden, pointer-events: none, paused on
+   hidden tabs, one static frame when reduced motion is requested.
+   ============================================================ */
+(() => {
+  'use strict';
+
+  const canvas = document.getElementById('wallCv');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+
+  const ptr = { x: 0, y: 0, vx: 0, vy: 0, active: false, down: false, t: 0 };
+  const glow = { x: 0, y: 0 };
+  const spawnAt = { x: -999, y: -999 };
+
+  let w = 0, h = 0, dpr = 1;
+  let blobs = [];
+  let streaks = [];
+  let caustic = null;
+  let raf = 0, lastT = 0, running = false, timeSec = 0;
+  let pressGlow = 0;
+  let lightPulse = 0;
+
+  function makeCaustic() {
+    const size = 256;
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const g = c.getContext('2d');
+    const grd = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    grd.addColorStop(0, 'rgba(240, 246, 255, 0.50)');
+    grd.addColorStop(0.32, 'rgba(214, 228, 250, 0.20)');
+    grd.addColorStop(0.70, 'rgba(190, 208, 240, 0.05)');
+    grd.addColorStop(1, 'rgba(190, 208, 240, 0)');
+    g.fillStyle = grd;
+    g.fillRect(0, 0, size, size);
+    return c;
+  }
+
+  function seedWater() {
+    const n = clamp(Math.round((w * h) / 60000), 10, 22);
+    blobs = [];
+    for (let i = 0; i < n; i++) {
+      blobs.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: rand(140, 360),
+        vx: 0,
+        vy: 0,
+        alpha: rand(0.020, 0.045),
+        phase: rand(0, Math.PI * 2),
+      });
+    }
+    for (let i = 0; i < 3; i++) {
+      blobs.push({
+        x: Math.random() * w,
+        y: rand(0, h),
+        r: rand(560, 860),
+        vx: 0,
+        vy: 0,
+        alpha: rand(0.012, 0.024),
+        phase: rand(0, Math.PI * 2),
+        sheet: true,
+      });
+    }
+    streaks.length = 0;
+    spawnAt.x = -999;
+    spawnAt.y = -999;
+  }
+
+  function spawnStreak(x, y, vx, vy, strength) {
+    if (streaks.length > 80) return;
+    streaks.push({
+      x: x, y: y,
+      vx: vx * rand(0.16, 0.30) + rand(-18, 18),
+      vy: vy * rand(0.16, 0.30) + rand(-18, 18),
+      t: 0,
+      life: rand(0.5, 1.1),
+      len: rand(120, 250) * strength,
+      wid: rand(40, 90) * strength,
+      alpha: rand(0.045, 0.095) * strength,
+    });
+  }
+
+  function updateWater(dt, t) {
+    if (ptr.active) {
+      const k = 1 - Math.exp(-dt * 8);
+      glow.x += (ptr.x - glow.x) * k;
+      glow.y += (ptr.y - glow.y) * k;
+    }
+    pressGlow += ((ptr.down ? 1 : 0) - pressGlow) * Math.min(1, dt * 10);
+    lightPulse = Math.max(0, lightPulse - dt * 2.2);
+
+    for (let i = 0; i < blobs.length; i++) {
+      const b = blobs[i];
+      let tvx = 8 * Math.sin(t * 0.08 + b.phase) + 5 * Math.cos(t * 0.05 + b.phase * 1.7);
+      let tvy = 5 * Math.cos(t * 0.07 + b.phase * 1.3) + 4 * Math.sin(t * 0.045 + b.phase);
+      if (!b.sheet && ptr.active) {
+        const dx = b.x - ptr.x, dy = b.y - ptr.y;
+        const d = Math.hypot(dx, dy) || 1;
+        const reach = 360;
+        if (d < reach) {
+          const f = 1 - d / reach;
+          const ff = f * f;
+          tvx += ptr.vx * 0.20 * ff + (-dy / d) * 40 * ff;
+          tvy += ptr.vy * 0.20 * ff + (dx / d) * 40 * ff;
+        }
+      }
+      const ease = Math.min(1, dt * 1.3);
+      b.vx += (tvx - b.vx) * ease;
+      b.vy += (tvy - b.vy) * ease;
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      const m = b.r * 0.7;
+      if (b.x < -m) b.x = w + m; else if (b.x > w + m) b.x = -m;
+      if (b.y < -m) b.y = h + m; else if (b.y > h + m) b.y = -m;
+    }
+
+    for (let i = streaks.length - 1; i >= 0; i--) {
+      const s = streaks[i];
+      s.t += dt;
+      if (s.t / s.life >= 1) { streaks.splice(i, 1); continue; }
+      const damp = Math.exp(-dt * 1.7);
+      s.vx *= damp;
+      s.vy *= damp;
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+    }
+  }
+
+  function render(dt) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.clearRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'lighter';
+
+    /* slow sheets of light drifting across the scene */
+    for (let i = 0; i < blobs.length; i++) {
+      const b = blobs[i];
+      ctx.globalAlpha = b.alpha;
+      ctx.drawImage(caustic, b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
+    }
+
+    /* the soft point light: follows the pointer, swells on a click */
+    const active = ptr.active;
+    const lx = active ? glow.x : w * 0.55;
+    const ly = active ? glow.y : h * 0.18;
+    const radius = 420 + pressGlow * 190 + lightPulse * 130;
+    const alpha = (active ? 0.16 : 0.05) + pressGlow * 0.10 + lightPulse * 0.08;
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(caustic, lx - radius, ly - radius, radius * 2, radius * 2);
+
+    /* pale trails left by dragging */
+    for (let i = 0; i < streaks.length; i++) {
+      const s = streaks[i];
+      const k = s.t / s.life;
+      const a = (1 - k) * s.alpha;
+      if (a <= 0.002) continue;
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate(Math.atan2(s.vy, s.vx));
+      ctx.globalAlpha = a;
+      ctx.drawImage(caustic, -s.len / 2, -s.wid / 2, s.len, s.wid);
+      ctx.restore();
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function step(now) {
+    if (!running) return;
+    raf = requestAnimationFrame(step);
+    const dt = Math.min(0.05, (now - lastT) / 1000 || 0.016);
+    lastT = now;
+    timeSec += dt;
+    updateWater(dt, timeSec);
+    render(dt);
+  }
+
+  function start() {
+    if (running || reduced.matches) return;
+    running = true;
+    lastT = performance.now();
+    raf = requestAnimationFrame(step);
+  }
+
+  function stop() {
+    running = false;
+    cancelAnimationFrame(raf);
+    raf = 0;
+  }
+
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    w = window.innerWidth;
+    h = window.innerHeight;
+    canvas.width = Math.max(1, Math.round(w * dpr));
+    canvas.height = Math.max(1, Math.round(h * dpr));
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    seedWater();
+    if (!running) render(0);
+  }
+
+  /* ---------- pointer input (passive: never blocks the page) ---------- */
+  function onMove(e) {
+    const now = performance.now();
+    const span = Math.max(8, now - (ptr.t || now));
+    if (!ptr.t) {
+      ptr.x = e.clientX;
+      ptr.y = e.clientY;
+      glow.x = ptr.x;
+      glow.y = ptr.y;
+      spawnAt.x = ptr.x;
+      spawnAt.y = ptr.y;
+    }
+    ptr.vx = clamp(((e.clientX - ptr.x) / span) * 1000, -3000, 3000);
+    ptr.vy = clamp(((e.clientY - ptr.y) / span) * 1000, -3000, 3000);
+    ptr.x = e.clientX;
+    ptr.y = e.clientY;
+    ptr.t = now;
+    ptr.active = true;
+
+    const dist = Math.hypot(ptr.x - spawnAt.x, ptr.y - spawnAt.y);
+    if (!reduced.matches && dist > 12) {
+      spawnAt.x = ptr.x;
+      spawnAt.y = ptr.y;
+      spawnStreak(ptr.x, ptr.y, ptr.vx, ptr.vy, ptr.down ? 1.25 : 0.8);
+    }
+  }
+
+  function onDown(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (!ptr.t) {
+      ptr.x = e.clientX;
+      ptr.y = e.clientY;
+    }
+    ptr.down = true;
+    ptr.active = true;
+    ptr.x = e.clientX;
+    ptr.y = e.clientY;
+    ptr.t = performance.now();
+    glow.x = e.clientX;
+    glow.y = e.clientY;
+    spawnAt.x = e.clientX;
+    spawnAt.y = e.clientY;
+    if (!reduced.matches) lightPulse = 1;
+  }
+
+  function onUp(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    ptr.down = false;
+  }
+
+  function release() {
+    ptr.active = false;
+    ptr.down = false;
+  }
+
+  window.addEventListener('pointermove', onMove, { passive: true });
+  window.addEventListener('pointerdown', onDown, { passive: true });
+  window.addEventListener('pointerup', onUp, { passive: true });
+  window.addEventListener('pointercancel', release, { passive: true });
+  document.addEventListener('pointerleave', release, { passive: true });
+  window.addEventListener('blur', release);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stop();
+    else start();
+  });
+
+  let resizeRaf = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(() => {
+      resize();
+      if (reduced.matches) render(0);
+    });
+  }, { passive: true });
+
+  const onReducedChange = () => {
+    if (reduced.matches) { stop(); render(0); }
+    else start();
+  };
+  if (reduced.addEventListener) reduced.addEventListener('change', onReducedChange);
+  else if (reduced.addListener) reduced.addListener(onReducedChange);
+
+  caustic = makeCaustic();
+
+  /* gentle fade-in, then let the light breathe */
+  canvas.style.transition = 'opacity 600ms ease';
+  canvas.style.opacity = '0';
+  resize();
+  if (reduced.matches) render(0);
+  else start();
+  canvas.style.opacity = '1';
+})();
+</script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>One-on-One — Basketball — Pure Chaos</title>
+<meta name="description" content="Pure Chaos — Full-court one-on-one basketball. Sprint, dribble, fade away and play a full playoff season.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-title" content="Pure Chaos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/vt323.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/games.css">
+</head>
+<body class="arcade">
+
+<div class="ambient" aria-hidden="true"></div>
+
+<header class="nav" role="banner">
+  <div class="nav__inner">
+    <a class="brand" href="index.html" aria-label="Pure Chaos — home">
+      <img class="brand__mark" src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a class="glass-btn" href="brands.html"><span>brands</span></a>
+      <a class="glass-btn" href="about.html"><span>about us</span></a>
+      <a class="glass-btn" href="articles.html"><span>articles</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="play play--hoops">
+  <a class="crumbs" href="game-basketball.html">&lt;- BASKETBALL</a>
+  <h1 class="play__title">ONE-ON-ONE</h1>
+  <p class="play__prompt" id="hoopsPrompt">CHOOSE YOUR MATCH</p>
+
+  <!-- ============================================================
+       SETUP — vs cpu, 2 players or the playoff season
+       ============================================================ -->
+  <section class="setup hoops-setup" id="setup" aria-label="Match setup">
+    <div class="setup__stage">
+      <p class="setup__step">STEP 1 / 1 — PICK A MODE</p>
+
+      <div class="level-grid">
+        <button class="level-card" type="button" data-mode="cpu">
+          <span class="level-card__num">01</span>
+          <span class="level-card__body">
+            <span class="level-card__name">VS CPU</span>
+            <span class="level-card__desc">Full court, first to 11. One keyboard, one opponent.</span>
+          </span>
+          <span class="level-card__go">SELECT</span>
+        </button>
+
+        <button class="level-card" type="button" data-mode="2p">
+          <span class="level-card__num">02</span>
+          <span class="level-card__body">
+            <span class="level-card__name">Two players</span>
+            <span class="level-card__desc">Full court on one keyboard. Arrows vs WASD.</span>
+          </span>
+          <span class="level-card__go">SELECT</span>
+        </button>
+
+        <button class="level-card" type="button" data-mode="season">
+          <span class="level-card__num">03</span>
+          <span class="level-card__body">
+            <span class="level-card__name">Season</span>
+            <span class="level-card__desc">Eight teams, three knockout rounds, a ring or a stat report.</span>
+          </span>
+          <span class="level-card__go">SELECT</span>
+        </button>
+      </div>
+
+      <div class="setup__actions">
+        <button class="btn-pixel" id="setupStart" type="button" disabled>TIP OFF</button>
+      </div>
+      <p class="setup__summary" id="setupSummary"></p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SEASON — bracket between games
+       ============================================================ -->
+  <section class="season" id="bracket" aria-label="Playoff bracket" hidden>
+    <p class="season__kicker" id="bracketKicker">PLAYOFF BRACKET</p>
+    <div class="bracket" id="bracketEl"></div>
+    <p class="season__note" id="bracketNote"></p>
+    <div class="setup__actions">
+      <button class="btn-pixel" id="bracketPlay" type="button">TIP OFF</button>
+      <button class="btn-pixel btn-pixel--ghost" id="bracketQuit" type="button">QUIT SEASON</button>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       MATCH — the cabinet
+       ============================================================ -->
+  <div class="game" id="game" hidden>
+    <div class="hoops-board">
+      <div class="hoops-team hoops-team--p1">
+        <span class="hoops-team__name" id="nameP1">PURE CHAOS</span>
+        <span class="hoops-team__pts" id="ptsP1">0</span>
+      </div>
+      <div class="hoops-mid">
+        <span class="hoops-mid__label">SHOT CLOCK</span>
+        <span class="hoops-mid__clock" id="shotClock">12</span>
+        <span class="hoops-mid__target" id="targetLine">FIRST TO 11</span>
+      </div>
+      <div class="hoops-team hoops-team--p2">
+        <span class="hoops-team__name" id="nameP2">THE CABINET</span>
+        <span class="hoops-team__pts" id="ptsP2">0</span>
+      </div>
+    </div>
+
+    <p class="hoops-possession" id="possLine" aria-live="polite">CHECK BALL</p>
+
+    <div class="pixel-frame pixel-frame--hoops">
+      <canvas id="hoopCv" width="960" height="520" aria-label="Full court one-on-one basketball game"></canvas>
+
+      <div class="overlay" id="hoopOverlay" role="dialog" aria-modal="true" aria-labelledby="ovTitle" hidden>
+        <div>
+          <p class="overlay__title" id="ovTitle">FINAL</p>
+          <p class="overlay__sub" id="ovSub"></p>
+          <div class="overlay__row">
+            <button class="btn-pixel" id="ovPrimary" type="button">REMATCH</button>
+            <button class="btn-pixel btn-pixel--ghost" id="ovSecondary" type="button">CHANGE MODE</button>
+            <button class="btn-pixel btn-pixel--ghost" id="ovBasketball" type="button">BASKETBALL</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hoops-keys" id="controlsHint"></div>
+
+    <div class="touch-pad" id="touchPad" role="group" aria-label="Touch controls" hidden>
+      <div class="touch-pad__row">
+        <button class="touch-btn" id="touchLeft" type="button">LEFT</button>
+        <button class="touch-btn" id="touchDown" type="button">DOWN</button>
+        <button class="touch-btn" id="touchRight" type="button">RIGHT</button>
+      </div>
+      <div class="touch-pad__row">
+        <button class="touch-btn touch-btn--shoot" id="touchShoot" type="button">SHOOT</button>
+        <button class="touch-btn" id="touchAction" type="button">DRIBBLE</button>
+      </div>
+    </div>
+
+    <p class="hint">P1 SHOOTS RIGHT · P2 SHOOTS LEFT · FIRST TO 11 · SHOT CLOCK 12<br>HOLD ↑ / RIGHT MOUSE — RELEASE AT THE TOP TO SHOOT · HOLD ←/→ IN THE AIR FOR FADEAWAY / LEAN-IN</p>
+  </div>
+
+  <!-- ============================================================
+       SEASON REPORT — the final stat line
+       ============================================================ -->
+  <section class="report" id="report" aria-label="Season report" hidden>
+    <p class="season__kicker" id="reportKicker">SEASON COMPLETE</p>
+    <h2 class="report__title" id="reportTitle">CHAMPIONS</h2>
+    <canvas class="report__art" id="trophyCv" width="140" height="140" aria-hidden="true"></canvas>
+    <p class="report__note" id="reportNote"></p>
+    <div class="report__grid" id="reportGrid"></div>
+    <div class="setup__actions">
+      <button class="btn-pixel" id="reportAgain" type="button">NEW SEASON</button>
+      <button class="btn-pixel btn-pixel--ghost" id="reportModes" type="button">CHANGE MODE</button>
+      <button class="btn-pixel btn-pixel--ghost" id="reportBasketball" type="button">BASKETBALL</button>
+    </div>
+  </section>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer__inner">
+    <a class="footer__brand" href="index.html" aria-label="Pure Chaos — home">
+      <img src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="footer__cols" aria-label="Footer">
+      <ul class="footer__col">
+        <li><a href="#">Privacy policies</a></li>
+        <li><a href="#">Do not share my personal data</a></li>
+        <li><a href="#">Collaborations</a></li>
+        <li><a href="#">We care about your well-being</a></li>
+        <li><a href="#">Cookies</a></li>
+        <li><a href="#">Terms of use</a></li>
+        <li><a href="#">Sitemap</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Contact us</a></li>
+      </ul>
+      <ul class="footer__col">
+        <li><a href="#">Assets free for downloading</a></li>
+        <li><a href="#">Members of the club</a></li>
+        <li><a href="#">External links</a></li>
+        <li><a href="#">Contributors</a></li>
+      </ul>
+    </nav>
+    <a class="footer__game" href="games.html"><span class="game__fx" aria-hidden="true"><span class="game__invader"></span><span class="game__coin">INSERT COIN</span></span><span class="game__label">Game center <span class="game__arrow">-&gt;</span></span></a>
+  </div>
+</footer>
+
+<script src="assets/dialogs.js"></script>
+<script src="assets/basketball-physics.js"></script>
+<script src="assets/basketball-match.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const B = window.BasketballMatch;
+  const $ = (id) => document.getElementById(id);
+
+  /* ---------------- elements ---------------- */
+  const setupEl = $('setup');
+  const gameEl = $('game');
+  const bracketEl = $('bracket');
+  const reportEl = $('report');
+  const promptEl = $('hoopsPrompt');
+  const setupStartBtn = $('setupStart');
+  const setupSummaryEl = $('setupSummary');
+  const bracketKicker = $('bracketKicker');
+  const bracketGamesEl = $('bracketEl');
+  const bracketNote = $('bracketNote');
+  const bracketPlayBtn = $('bracketPlay');
+  const bracketQuitBtn = $('bracketQuit');
+  const nameP1El = $('nameP1');
+  const nameP2El = $('nameP2');
+  const ptsP1El = $('ptsP1');
+  const ptsP2El = $('ptsP2');
+  const shotClockEl = $('shotClock');
+  const targetLineEl = $('targetLine');
+  const possLineEl = $('possLine');
+  const controlsHintEl = $('controlsHint');
+  const touchPadEl = $('touchPad');
+  const touchActionEl = $('touchAction');
+  const overlayEl = $('hoopOverlay');
+  const ovTitle = $('ovTitle');
+  const ovSub = $('ovSub');
+  const ovPrimary = $('ovPrimary');
+  const ovSecondary = $('ovSecondary');
+  const ovBasketball = $('ovBasketball');
+  const reportKicker = $('reportKicker');
+  const reportTitle = $('reportTitle');
+  const reportNote = $('reportNote');
+  const reportGrid = $('reportGrid');
+  const trophyCv = $('trophyCv');
+  const cv = $('hoopCv');
+  const ctx = cv.getContext('2d');
+
+  const COURT = B.COURT;
+  const W = COURT.W, H = COURT.H, FLOOR = COURT.FLOOR;
+  const HOOP_L = COURT.HOOPS.left;
+  const HOOP_R = COURT.HOOPS.right;
+  const THREE_DIST = COURT.THREE_DIST;
+
+  /* ---------------- state ---------------- */
+  let screen = 'setup';
+  let selectedMode = null;
+  let match = null;
+  let matchConfig = null;
+  let season = null;
+  let overlayKind = null;
+  let hudHint = '';
+  let lastNow = 0;
+  let courtLayer = null;
+  let keys = { p1: {}, p2: {} };
+  let mouseHeld = false;
+  const lastTap = { p1: { left: 0, right: 0 }, p2: { left: 0, right: 0 } };
+  const view = {
+    p1: { lastX: 0, run: 0, moving: false },
+    p2: { lastX: 0, run: 0, moving: false },
+  };
+
+  /* ============================================================
+     SCREENS
+     ============================================================ */
+  function setScreen(name) {
+    screen = name;
+    setupEl.hidden = name !== 'setup';
+    gameEl.hidden = name !== 'game';
+    bracketEl.hidden = name !== 'bracket';
+    reportEl.hidden = name !== 'report';
+    if (name === 'setup') {
+      promptEl.textContent = 'CHOOSE YOUR MATCH';
+      promptEl.classList.remove('play__prompt--blink');
+      overlayEl.hidden = true;
+    } else if (name === 'game') {
+      promptEl.classList.remove('play__prompt--blink');
+    } else if (name === 'bracket') {
+      promptEl.textContent = 'PLAYOFF BRACKET';
+      promptEl.classList.remove('play__prompt--blink');
+    } else if (name === 'report') {
+      promptEl.textContent = 'SEASON REPORT';
+      promptEl.classList.remove('play__prompt--blink');
+    }
+    if (name !== 'game') overlayEl.hidden = true;
+    syncTouchPad();
+  }
+
+  function selectMode(mode) {
+    selectedMode = mode;
+    document.querySelectorAll('[data-mode]').forEach((btn) => {
+      btn.classList.toggle('is-picked', btn.getAttribute('data-mode') === mode);
+    });
+    setupStartBtn.disabled = false;
+    const labels = {
+      cpu: 'FULL COURT  /  FIRST TO 11  /  P1 SHOOTS RIGHT · CPU SHOOTS LEFT',
+      '2p': 'FULL COURT  /  FIRST TO 11  /  P1 SHOOTS RIGHT · P2 SHOOTS LEFT',
+      season: 'SEASON  /  EIGHT TEAMS  /  THREE ROUNDS  /  FULL COURT',
+    };
+    setupSummaryEl.textContent = labels[mode] || '';
+  }
+
+  /* ============================================================
+     MATCH BOOT
+     ============================================================ */
+  function startMatch(cfg) {
+    matchConfig = cfg;
+    match = B.createMatch({
+      mode: cfg.mode,
+      difficulty: cfg.difficulty,
+      target: cfg.target,
+      names: cfg.names,
+      rng: Math.random,
+    });
+    keys = { p1: {}, p2: {} };
+    hudHint = '';
+    view.p1.lastX = match.players.p1.x;
+    view.p2.lastX = match.players.p2.x;
+    nameP1El.textContent = match.names.p1;
+    nameP2El.textContent = match.names.p2;
+    targetLineEl.textContent = 'FIRST TO ' + match.target;
+    promptEl.textContent = cfg.season
+      ? cfg.roundName + ' · FIRST TO ' + match.target
+      : 'FULL COURT · FIRST TO ' + match.target;
+    ptsP1El.textContent = '0';
+    ptsP2El.textContent = '0';
+    shotClockEl.textContent = String(B.SHOT_CLOCK);
+    possLineEl.textContent = 'TIP OFF';
+    controlsHintEl.innerHTML = '';
+    overlayEl.hidden = true;
+    mouseHeld = false;
+    lastNow = 0;
+    setScreen('game');
+  }
+
+  /* ============================================================
+     QUICK MATCH FLOW
+     ============================================================ */
+  function startSelected() {
+    if (!selectedMode) return;
+    if (selectedMode === 'season') { startSeason(); return; }
+    startMatch({
+      mode: selectedMode,
+      difficulty: 'normal',
+      target: 11,
+      names: {
+        p1: 'PURE CHAOS',
+        p2: selectedMode === 'cpu' ? 'THE CABINET' : 'PLAYER 2',
+      },
+      season: false,
+    });
+  }
+
+  /* ============================================================
+     SEASON FLOW
+     ============================================================ */
+  function startSeason() {
+    match = null;
+    season = B.createSeason({ rng: Math.random });
+    setScreen('bracket');
+    renderBracket();
+  }
+
+  function renderBracket() {
+    if (!season) return;
+    const rounds = season.rounds;
+    const keys = ['qf', 'sf', 'f'];
+    bracketGamesEl.innerHTML = rounds.map((round, ri) => {
+      const games = season.bracket[keys[ri]];
+      const items = games.map((game) => {
+        const next = game.you && !game.winner && !season.champion && !season.eliminated;
+        const won = game.winner === 'PURE CHAOS';
+        const tag = game.you ? '<span class="bracket-game__tag">YOU</span>' : '';
+        const row = (name, score, isWin, isYou) => {
+          const label = name || 'TBD';
+          const cls = [
+            'bracket-team',
+            isWin ? 'is-win' : '',
+            isYou ? 'is-you' : '',
+            !name ? 'is-tbd' : '',
+          ].filter(Boolean).join(' ');
+          return '<div class="' + cls + '"><span class="bracket-team__name">' + label +
+            '</span><span class="bracket-team__score">' + (score == null ? '—' : score) + '</span></div>';
+        };
+        return '<div class="bracket-game' + (game.you ? ' is-you' : '') + (next ? ' is-next' : '') + '">' +
+          row(game.a, game.sa, game.winner && game.winner === game.a, game.a === 'PURE CHAOS') +
+          row(game.b, game.sb, game.winner && game.winner === game.b, game.b === 'PURE CHAOS') +
+          tag + '</div>';
+      }).join('');
+      return '<div class="bracket__col">' +
+        '<p class="bracket__round">' + round.name + '</p>' +
+        '<div class="bracket__games">' + items + '</div>' +
+        '</div>';
+    }).join('');
+
+    const cfg = season.playerGame();
+    if (season.champion) {
+      bracketKicker.textContent = 'SEASON COMPLETE';
+      bracketNote.textContent = 'PURE CHAOS won the whole thing. Go to the report to read the numbers.';
+      bracketPlayBtn.hidden = true;
+    } else if (season.eliminated) {
+      bracketKicker.textContent = 'SEASON OVER';
+      bracketNote.textContent = 'PURE CHAOS is out. The run stops here.';
+      bracketPlayBtn.hidden = true;
+    } else {
+      bracketKicker.textContent = 'ROUND ' + (cfg.roundIndex + 1) + ' / 3 — ' + cfg.roundName;
+      bracketNote.textContent = 'NEXT — PURE CHAOS vs ' + cfg.opponent + ' · FIRST TO ' + cfg.target +
+        ' · ' + B.DIFFICULTY[cfg.difficulty].label;
+      bracketPlayBtn.hidden = false;
+      bracketPlayBtn.textContent = cfg.roundIndex === 0 ? 'TIP OFF' : 'PLAY NEXT MATCH';
+    }
+  }
+
+  function playSeasonMatch() {
+    if (!season) return;
+    const cfg = season.playerGame();
+    if (!cfg) return;
+    startMatch({
+      mode: 'cpu',
+      difficulty: cfg.difficulty,
+      target: cfg.target,
+      names: { p1: 'PURE CHAOS', p2: cfg.opponent },
+      season: true,
+      roundName: cfg.roundName,
+      roundIndex: cfg.roundIndex,
+    });
+  }
+
+  function recordSeasonResult() {
+    if (!season || !match) return;
+    const res = match.getResult();
+    if (!res) return;
+    const out = season.recordPlayerResult({
+      win: res.playerWin,
+      sa: res.score[0],
+      sb: res.score[1],
+      stats: res.stats.p1,
+    });
+    if (out.over) { showReport(); return; }
+    setScreen('bracket');
+    renderBracket();
+  }
+
+  /* ============================================================
+     SEASON REPORT
+     ============================================================ */
+  function showReport(persist) {
+    if (!season) return;
+    const rep = season.report();
+    setScreen('report');
+    reportKicker.textContent = rep.champion
+      ? 'SEASON COMPLETE — CHAMPIONS'
+      : 'SEASON OVER — OUT IN THE ' + rep.roundName;
+    reportTitle.textContent = rep.champion ? 'CHAMPIONS' : 'RUN OVER';
+    reportNote.textContent = rep.champion
+      ? 'PURE CHAOS takes the ring — ' + rep.record + ' through the playoffs.'
+      : 'The run ends in the ' + rep.roundName + ' — ' + rep.record + '.';
+    const run = rep.history.map((g) => {
+      const tag = g.round.indexOf('QUARTER') === 0 ? 'QF' : (g.round.indexOf('SEMI') === 0 ? 'SF' : 'F');
+      return tag + ' ' + g.sa + '-' + g.sb;
+    }).join(' · ');
+    const rows = [
+      ['RECORD', rep.record],
+      ['ROUND REACHED', rep.champion ? 'CHAMPION' : rep.roundName],
+      ['PLAYOFF RUN', run],
+      ['POINTS PER GAME', rep.ppg.toFixed(1)],
+      ['TOTAL POINTS', rep.ptsFor + ' FOR · ' + rep.ptsAgainst + ' AGAINST'],
+      ['FIELD GOALS', rep.fgm + '/' + rep.fga + ' · ' + rep.fgPct + '%'],
+      ['THREE POINTERS', rep.tpm + '/' + rep.tpa + ' · ' + rep.tpPct + '%'],
+      ['STEALS', String(rep.stl)],
+      ['BLOCKS', String(rep.blk)],
+      ['ANKLE BREAKERS', String(rep.ankle)],
+      ['TURNOVERS', String(rep.to)],
+      ['BEST GAME', rep.bestGame + ' PTS'],
+      ['BIGGEST WIN', rep.biggestWin + ' PTS'],
+      ['GRADE', rep.grade],
+    ];
+    reportGrid.innerHTML = rows.map(([label, value]) =>
+      '<div class="report-row"><span class="report-row__label">' + label +
+      '</span><span class="report-row__value">' + value + '</span></div>').join('');
+    drawTrophy(rep.champion);
+    if (persist !== false) saveSeason(rep);
+  }
+
+  function saveSeason(rep) {
+    try {
+      if (rep.champion) {
+        const rings = (parseInt(localStorage.getItem('pc_hoops_rings') || '0', 10) || 0) + 1;
+        localStorage.setItem('pc_hoops_rings', String(rings));
+      }
+      const best = parseInt(localStorage.getItem('pc_hoops_season_best') || '0', 10) || 0;
+      if (rep.wins > best) localStorage.setItem('pc_hoops_season_best', String(rep.wins));
+    } catch (e) { /* private mode */ }
+  }
+
+  function drawTrophy(champion) {
+    const g = trophyCv.getContext('2d');
+    const S = 140;
+    g.clearRect(0, 0, S, S);
+    g.imageSmoothingEnabled = false;
+    const px = (x, y, w, h, color) => {
+      g.fillStyle = color;
+      g.fillRect(Math.round(x), Math.round(y), w, h);
+    };
+    const ink = champion ? '#ffffff' : 'rgba(255,255,255,0.42)';
+    const glow = champion ? '#b8bfe8' : 'rgba(255,255,255,0.18)';
+
+    if (champion) {
+      g.shadowColor = 'rgba(184, 191, 232, 0.9)';
+      g.shadowBlur = 22;
+    }
+    /* cup + handles + stem + base, tuned on a 140 grid */
+    px(48, 34, 44, 8, ink);        // lip
+    px(44, 42, 52, 26, ink);       // bowl
+    px(48, 68, 44, 6, ink);        // bowl bottom
+    px(34, 46, 8, 4, ink);         // left handle top
+    px(30, 46, 4, 16, ink);        // left handle outer
+    px(34, 62, 8, 4, ink);         // left handle bottom
+    px(98, 46, 8, 4, ink);         // right handle top
+    px(106, 46, 4, 16, ink);       // right handle outer
+    px(98, 62, 8, 4, ink);         // right handle bottom
+    px(62, 74, 16, 16, ink);       // stem
+    px(64, 74, 5, 16, '#050507');  // stem notch
+    px(52, 90, 36, 8, ink);        // top base
+    px(46, 98, 48, 10, ink);       // base
+    px(46, 98, 48, 3, glow);       // base highlight
+    px(50, 42, 4, 22, glow);       // cup highlight
+    if (champion) {
+      g.shadowBlur = 0;
+      px(56, 12, 4, 4, glow);
+      px(78, 8, 4, 4, glow);
+      px(92, 22, 3, 3, glow);
+      px(40, 18, 3, 3, glow);
+      px(84, 30, 3, 3, glow);
+    } else {
+      /* cracked cup */
+      px(66, 34, 4, 20, '#050507');
+      px(70, 46, 4, 20, '#050507');
+      px(74, 58, 4, 14, '#050507');
+    }
+  }
+
+  /* ============================================================
+     KEYBOARD / MOUSE
+     ============================================================ */
+  function isHuman(side) {
+    return match && match.human.indexOf(side) >= 0;
+  }
+
+  function command(side, cmd, arg) {
+    if (!match || !isHuman(side)) return;
+    match.command(side, cmd, arg);
+  }
+
+  function defenceCommand(side, arg) {
+    if (!match || !isHuman(side)) return;
+    const p = match.players[side];
+    if (p.role === 'off') match.command(side, 'move', arg);
+    else match.command(side, 'steal');
+  }
+
+  /* double-tap a direction inside 280ms to sprint that way */
+  function tapDirection(side, dir) {
+    const now = performance.now();
+    const key = dir > 0 ? 'right' : 'left';
+    const prev = lastTap[side][key] || 0;
+    if (now - prev <= 280) {
+      lastTap[side][key] = 0;
+      command(side, 'sprint', dir);
+    } else {
+      lastTap[side][key] = now;
+    }
+  }
+
+  const P1_HELD = { ArrowLeft: 'left', ArrowRight: 'right', ArrowDown: 'down' };
+  const P2_HELD = { KeyA: 'left', KeyD: 'right', KeyS: 'down' };
+
+  function onKeyDown(e) {
+    if (screen !== 'game' || !match) return;
+    const code = e.code;
+    let handled = false;
+    if (P1_HELD[code]) {
+      keys.p1[P1_HELD[code]] = true;
+      handled = true;
+      if (!e.repeat && (code === 'ArrowLeft' || code === 'ArrowRight')) {
+        tapDirection('p1', code === 'ArrowRight' ? 1 : -1);
+      }
+    } else if (code === 'ArrowUp') {
+      if (!e.repeat && overlayEl.hidden) command('p1', 'up');
+      handled = true;
+    } else if (/^Digit[1-4]$/.test(code)) {
+      if (!e.repeat && overlayEl.hidden) defenceCommand('p1', Number(code.slice(5)));
+      handled = true;
+    } else if (match.mode === '2p') {
+      if (P2_HELD[code]) {
+        keys.p2[P2_HELD[code]] = true;
+        handled = true;
+        if (!e.repeat && (code === 'KeyA' || code === 'KeyD')) {
+          tapDirection('p2', code === 'KeyD' ? 1 : -1);
+        }
+      } else if (code === 'KeyW') {
+        if (!e.repeat && overlayEl.hidden) command('p2', 'up');
+        handled = true;
+      } else if (/^Digit[7890]$/.test(code)) {
+        const n = code === 'Digit0' ? 4 : Number(code.slice(5)) - 6;
+        if (!e.repeat && overlayEl.hidden) defenceCommand('p2', n);
+        handled = true;
+      }
+    }
+    if (handled) e.preventDefault();
+  }
+
+  function onKeyUp(e) {
+    const code = e.code;
+    if (P1_HELD[code]) keys.p1[P1_HELD[code]] = false;
+    if (code === 'ArrowUp' && !e.repeat) command('p1', 'release');
+    if (P2_HELD[code]) keys.p2[P2_HELD[code]] = false;
+    if (code === 'KeyW' && !e.repeat) command('p2', 'release');
+  }
+
+  function clearKeys() {
+    keys = { p1: {}, p2: {} };
+    lastTap.p1.left = lastTap.p1.right = 0;
+    lastTap.p2.left = lastTap.p2.right = 0;
+    mouseHeld = false;
+  }
+
+  /* right mouse button is the shot button: hold to gather, release to shoot */
+  function onMouseDown(e) {
+    if (e.button !== 2) return;
+    if (screen !== 'game' || !match || !overlayEl.hidden) return;
+    e.preventDefault();
+    mouseHeld = true;
+    command('p1', 'up');
+  }
+
+  function onMouseUp(e) {
+    if (e.button !== 2 || !mouseHeld) return;
+    mouseHeld = false;
+    command('p1', 'release');
+  }
+
+  /* ---- touch controls (phones): mirror the keyboard commands exactly ---- */
+  const coarsePointer = window.matchMedia('(hover: none), (pointer: coarse)');
+  let touchShootHeld = false;
+
+  function syncTouchPad() {
+    if (!touchPadEl) return;
+    touchPadEl.hidden = !(coarsePointer.matches && screen === 'game');
+  }
+
+  function bindTouchButton(btn, down, up) {
+    if (!btn) return;
+    btn.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      try { btn.setPointerCapture(e.pointerId); } catch (err) { /* not capturable */ }
+      down();
+    });
+    btn.addEventListener('pointerup', up);
+    btn.addEventListener('pointercancel', up);
+    btn.addEventListener('pointerleave', up);
+    btn.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+
+  if (touchPadEl) {
+    bindTouchButton($('touchLeft'), () => {
+      keys.p1.left = true;
+      if (screen === 'game' && match) tapDirection('p1', -1);
+    }, () => { keys.p1.left = false; });
+    bindTouchButton($('touchRight'), () => {
+      keys.p1.right = true;
+      if (screen === 'game' && match) tapDirection('p1', 1);
+    }, () => { keys.p1.right = false; });
+    bindTouchButton($('touchDown'), () => { keys.p1.down = true; }, () => { keys.p1.down = false; });
+    bindTouchButton($('touchShoot'), () => {
+      if (screen !== 'game' || !match || !overlayEl.hidden) return;
+      touchShootHeld = true;
+      command('p1', 'up');
+    }, () => {
+      if (!touchShootHeld) return;
+      touchShootHeld = false;
+      command('p1', 'release');
+    });
+    bindTouchButton(touchActionEl, () => {
+      if (screen !== 'game' || !match || !overlayEl.hidden) return;
+      defenceCommand('p1', 1);
+    }, () => {});
+    coarsePointer.addEventListener('change', syncTouchPad);
+  }
+
+  cv.addEventListener('mousedown', onMouseDown);
+  window.addEventListener('mouseup', onMouseUp);
+  cv.addEventListener('contextmenu', (e) => e.preventDefault());
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('blur', clearKeys);
+
+  /* ============================================================
+     OVERLAY / QUICK MATCH RESULT
+     ============================================================ */
+  function showMatchOverlay() {
+    if (!match || !match.over) return;
+    const res = match.getResult();
+    if (!res) return;
+    overlayKind = matchConfig && matchConfig.season ? 'season' : 'match';
+    const winnerName = res.winner === 'p1' ? match.names.p1 : match.names.p2;
+    ovTitle.textContent = winnerName + ' WINS';
+    const shortLine = (name, st) =>
+      '<b>' + name + '</b> · PTS ' + st.score + ' · FG ' + st.fgm + '/' + st.fga +
+      ' · 3PT ' + st.tpm + '/' + st.tpa + ' · STL ' + st.stl + ' · ANKLE ' + st.ankle;
+    ovSub.innerHTML =
+      match.names.p1 + ' ' + res.score[0] + ' — ' + res.score[1] + ' ' + match.names.p2 +
+      '<br>' + shortLine(match.names.p1, res.stats.p1) +
+      '<br>' + shortLine(match.names.p2, res.stats.p2);
+    ovSub.classList.add('overlay__sub--hoops');
+    ovPrimary.textContent = overlayKind === 'season' ? 'CONTINUE' : 'REMATCH';
+    ovSecondary.hidden = overlayKind === 'season';
+    ovSecondary.textContent = 'CHANGE MODE';
+    overlayEl.hidden = false;
+    if (overlayKind === 'match') {
+      try {
+        const w = (parseInt(localStorage.getItem('pc_hoops_1v1_w') || '0', 10) || 0);
+        const l = (parseInt(localStorage.getItem('pc_hoops_1v1_l') || '0', 10) || 0);
+        if (res.playerWin) localStorage.setItem('pc_hoops_1v1_w', String(w + 1));
+        else localStorage.setItem('pc_hoops_1v1_l', String(l + 1));
+      } catch (e) { /* private mode */ }
+    }
+  }
+
+  ovPrimary.addEventListener('click', () => {
+    if (overlayKind === 'season') {
+      overlayEl.hidden = true;
+      recordSeasonResult();
+      return;
+    }
+    overlayEl.hidden = true;
+    if (matchConfig) startMatch(matchConfig);
+  });
+  ovSecondary.addEventListener('click', () => {
+    overlayEl.hidden = true;
+    match = null;
+    setScreen('setup');
+  });
+  ovBasketball.addEventListener('click', () => { window.location.href = 'game-basketball.html'; });
+
+  /* ============================================================
+     HUD
+     ============================================================ */
+  function syncHud() {
+    if (!match) return;
+    ptsP1El.textContent = String(match.players.p1.score);
+    ptsP2El.textContent = String(match.players.p2.score);
+    const clock = Math.max(0, Math.ceil(match.shotClock));
+    shotClockEl.textContent = match.phase === 'over' ? '—' : String(clock);
+    shotClockEl.classList.toggle('is-low', clock <= 5 && match.phase === 'live');
+
+    let poss = '';
+    if (match.phase === 'over') {
+      poss = 'FINAL';
+    } else if (match.phase === 'check') {
+      poss = 'CHECK BALL · ' + match.names[match.offSide] + ' HAS IT';
+    } else if (match.phase === 'freeze') {
+      poss = (match.lastNote || 'CHECK BALL').toUpperCase();
+    } else if (match.phase === 'flight') {
+      poss = 'SHOT IN THE AIR';
+    } else {
+      poss = match.names[match.offSide] + ' BALL';
+    }
+    if (possLineEl.textContent !== poss) possLineEl.textContent = poss;
+
+    const html = hintMarkup();
+    if (html !== hudHint) {
+      hudHint = html;
+      controlsHintEl.innerHTML = html;
+    }
+    if (touchActionEl) {
+      const label = match.players.p1.role === 'off' ? 'DRIBBLE' : 'STEAL';
+      if (touchActionEl.textContent !== label) touchActionEl.textContent = label;
+    }
+  }
+
+  function hintMarkup() {
+    if (!match) return '';
+    const touch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    if (touch) {
+      if (match.mode === '2p') {
+        return '<span class="hoops-keys__row"><b>TOUCH</b> THE PAD BELOW CONTROLS P1 · P2 NEEDS A KEYBOARD</span>';
+      }
+      return match.players.p1.role === 'off'
+        ? '<span class="hoops-keys__row"><b>TOUCH</b> LEFT/RIGHT MOVE · DOUBLE-TAP = SPRINT · HOLD SHOOT, RELEASE AT THE TOP · DRIBBLE FOR A MOVE · DOWN TO TRIPLE</span>'
+        : '<span class="hoops-keys__row"><b>TOUCH</b> LEFT/RIGHT SLIDE · SHOOT TO CONTEST · STEAL TO SWIPE · DOWN TO BRACE</span>';
+    }
+    if (match.mode === '2p') {
+      return '<span class="hoops-keys__row"><b>P1</b> ARROWS + 1-4 · DOUBLE-TAP ←/→ SPRINT · HOLD ↑, RELEASE TO SHOOT · ↓ TRIPLE · 1-4 DRIBBLE/SWIPE</span>' +
+        '<span class="hoops-keys__row"><b>P2</b> WASD + 7-0 · DOUBLE-TAP A/D SPRINT · HOLD W, RELEASE TO SHOOT · S TRIPLE · 7-0 DRIBBLE/SWIPE</span>';
+    }
+    if (match.players.p1.role === 'off') {
+      return '<span class="hoops-keys__row"><b>OFFENCE</b> ←→ MOVE · DOUBLE-TAP = SPRINT · HOLD ↑ / RIGHT MOUSE, RELEASE TO SHOOT · ←/→ IN AIR = FADEAWAY / LEAN-IN · ↓ TRIPLE · 1-4 DRIBBLE</span>';
+    }
+    return '<span class="hoops-keys__row"><b>DEFENCE</b> ←→ SLIDE · DOUBLE-TAP = SPRINT · ↑ CONTEST · ↓ BRACE · 1-4 SWIPE</span>';
+  }
+
+  /* ============================================================
+     RENDER — full court, two hoops, players, ball, effects
+     ============================================================ */
+  const BODY = {
+    p1: { body: '#ffffff', leg: '#cfcfda', head: '#ffffff', shoe: '#e8e8ee' },
+    p2: { body: '#7f7f8d', leg: '#5c5c68', head: '#b7b7c4', shoe: '#dcdce6' },
+  };
+  const BALL_R = 9;
+
+  function jumpH(p) {
+    if (!p.jump) return 0;
+    const u = Math.min(1, p.jump.t / p.jump.dur);
+    return Math.sin(Math.PI * u) * p.jump.height;
+  }
+
+  function drawHoop(g, hoop) {
+    const side = hoop.boardSide;      // -1: board sits left of the rim, +1: right
+    const boardX = hoop.boardX;
+    const boardW = 8;
+
+    /* pole */
+    g.fillStyle = '#2c2c35';
+    g.fillRect(side > 0 ? boardX + 4 : boardX - 10, hoop.boardBottom, 6, FLOOR - hoop.boardBottom);
+    /* backboard */
+    g.fillStyle = '#d5d5df';
+    g.fillRect(side > 0 ? boardX : boardX - boardW, hoop.boardTop, boardW, hoop.boardBottom - hoop.boardTop);
+    g.fillStyle = '#101016';
+    g.fillRect(side > 0 ? boardX + 2 : boardX - 6, hoop.boardTop + 10, 4, hoop.boardBottom - hoop.boardTop - 46);
+    /* mounting arm from board to rim */
+    g.fillStyle = '#7d7d8a';
+    g.fillRect(side > 0 ? hoop.x + hoop.half : hoop.x - hoop.half - 12, hoop.y - 2, 12, 4);
+    /* rim */
+    g.fillStyle = '#ffffff';
+    g.fillRect(hoop.x - hoop.half, hoop.y, hoop.half * 2, 6);
+    g.fillStyle = '#7d7d8a';
+    g.fillRect(hoop.x - hoop.half, hoop.y + 6, hoop.half * 2, 2);
+    /* net */
+    g.strokeStyle = 'rgba(255,255,255,0.55)';
+    g.lineWidth = 1;
+    const topY = hoop.y + 7;
+    const botY = hoop.y + 58;
+    for (let i = 0; i <= 5; i++) {
+      const t = i / 5;
+      const tx = hoop.x - hoop.half + 4 + t * (hoop.half * 2 - 8);
+      const bx = hoop.x - hoop.half + 12 + t * (hoop.half * 2 - 24);
+      g.beginPath();
+      g.moveTo(Math.round(tx), topY);
+      g.lineTo(Math.round(bx), botY);
+      g.stroke();
+    }
+    g.strokeStyle = 'rgba(255,255,255,0.35)';
+    [18, 34, 48].forEach((dy, k) => {
+      const inset = 6 + k * 5;
+      g.beginPath();
+      g.moveTo(hoop.x - hoop.half + inset, topY + dy);
+      g.lineTo(hoop.x + hoop.half - inset, topY + dy);
+      g.stroke();
+    });
+    /* rim highlight */
+    g.fillStyle = 'rgba(184,191,232,0.35)';
+    g.fillRect(hoop.x - hoop.half, hoop.y, hoop.half * 2, 2);
+  }
+
+  function buildCourt() {
+    const layer = document.createElement('canvas');
+    layer.width = W;
+    layer.height = H;
+    const g = layer.getContext('2d');
+
+    g.fillStyle = '#050507';
+    g.fillRect(0, 0, W, H);
+
+    const glow = g.createRadialGradient(W / 2, 20, 40, W / 2, 180, W * 0.72);
+    glow.addColorStop(0, 'rgba(184,191,232,0.10)');
+    glow.addColorStop(1, 'rgba(184,191,232,0)');
+    g.fillStyle = glow;
+    g.fillRect(0, 0, W, H);
+
+    /* crowd behind the court */
+    for (let row = 0; row < 6; row++) {
+      const y = 36 + row * 15;
+      for (let x = 6; x < W - 6; x += 17) {
+        const h = (x * 13 + row * 47) % 101;
+        if (h < 44) continue;
+        g.fillStyle = h % 3 === 0 ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.045)';
+        g.fillRect(x + (h % 5), y, 9, 10);
+      }
+    }
+
+    /* one spotlight over each hoop */
+    [HOOP_L, HOOP_R].forEach((hp) => {
+      const beam = g.createLinearGradient(0, 0, 0, FLOOR);
+      beam.addColorStop(0, 'rgba(184,191,232,0.10)');
+      beam.addColorStop(1, 'rgba(184,191,232,0)');
+      g.fillStyle = beam;
+      g.beginPath();
+      g.moveTo(hp.x - 80, 0);
+      g.lineTo(hp.x + 80, 0);
+      g.lineTo(hp.x + 160, FLOOR);
+      g.lineTo(hp.x - 160, FLOOR);
+      g.closePath();
+      g.fill();
+    });
+
+    /* floor */
+    g.fillStyle = '#0b0b10';
+    g.fillRect(0, FLOOR, W, H - FLOOR);
+    g.fillStyle = '#ffffff';
+    g.fillRect(0, FLOOR, W, 2);
+    g.fillStyle = '#14141a';
+    for (let y = FLOOR + 22; y < H; y += 20) g.fillRect(0, y, W, 1);
+
+    /* painted lanes under the baskets */
+    g.fillStyle = 'rgba(255,255,255,0.03)';
+    g.fillRect(0, FLOOR + 2, HOOP_L.x + 150, H - FLOOR);
+    g.fillRect(HOOP_R.x - 150, FLOOR + 2, W - (HOOP_R.x - 150), H - FLOOR);
+
+    /* wall lettering above centre court */
+    g.textAlign = 'center';
+    g.font = '22px "Press Start 2P", monospace';
+    g.fillStyle = 'rgba(255,255,255,0.055)';
+    g.fillText('PURE CHAOS', W / 2, 158);
+    g.font = '9px "Press Start 2P", monospace';
+    g.fillStyle = 'rgba(184,191,232,0.25)';
+    g.fillText('FULL COURT', W / 2, 180);
+    g.textAlign = 'left';
+
+    /* half-court line + centre logo */
+    g.fillStyle = 'rgba(255,255,255,0.14)';
+    g.fillRect(W / 2 - 1, FLOOR + 2, 2, H - FLOOR - 4);
+    g.fillStyle = 'rgba(255,255,255,0.08)';
+    g.fillRect(W / 2 - 36, FLOOR + 26, 72, 5);
+    g.fillRect(W / 2 - 24, FLOOR + 38, 48, 5);
+    g.fillRect(W / 2 - 12, FLOOR + 50, 24, 5);
+
+    /* three point markers, one per half */
+    [HOOP_L, HOOP_R].forEach((hp) => {
+      const dir = hp.key === 'left' ? 1 : -1;
+      const mx = hp.x + dir * THREE_DIST;
+      g.fillStyle = 'rgba(255,255,255,0.30)';
+      for (let y = FLOOR - 24; y < FLOOR; y += 6) g.fillRect(mx - 1, y, 2, 3);
+      g.fillStyle = 'rgba(255,255,255,0.5)';
+      if (dir > 0) {
+        g.fillRect(mx + 8, FLOOR - 20, 8, 2);
+        g.fillRect(mx + 14, FLOOR - 18, 2, 6);
+        g.fillRect(mx + 8, FLOOR - 12, 8, 2);
+      } else {
+        g.fillRect(mx - 16, FLOOR - 20, 8, 2);
+        g.fillRect(mx - 10, FLOOR - 18, 2, 6);
+        g.fillRect(mx - 16, FLOOR - 12, 8, 2);
+      }
+    });
+
+    /* attack-direction marks on the floor */
+    g.fillStyle = 'rgba(184,191,232,0.22)';
+    for (let i = 0; i < 3; i++) g.fillRect(28 + i * 13, FLOOR + 28, 9, 4);
+    for (let i = 0; i < 3; i++) g.fillRect(W - 37 - i * 13, FLOOR + 28, 9, 4);
+
+    drawHoop(g, HOOP_L);
+    drawHoop(g, HOOP_R);
+    return layer;
+  }
+
+  function drawPlayer(g, p, v) {
+    const c = BODY[p.side];
+    const jh = jumpH(p);
+    const feet = FLOOR - jh;
+    let face = p.facing || 1;
+    if (p.role === 'off' && Math.abs(p.vx) < 18) face = B.attackDir(p.side);
+
+    /* floor shadow */
+    const sw = Math.max(16, 36 - jh * 0.12);
+    g.fillStyle = 'rgba(255,255,255,0.10)';
+    g.fillRect(Math.round(p.x - sw / 2), FLOOR - 3, Math.round(sw), 4);
+
+    /* sprint streaks */
+    if (Math.abs(p.vx) > 300) {
+      const back = p.vx > 0 ? -1 : 1;
+      g.fillStyle = 'rgba(184,191,232,0.42)';
+      for (let i = 0; i < 3; i++) {
+        g.fillRect(Math.round(p.x + back * (22 + i * 13)), FLOOR - 30 - i * 16, 16, 2);
+      }
+    }
+
+    g.save();
+    g.translate(Math.round(p.x), Math.round(feet));
+    g.scale(face, 1);
+
+    const parts = [];
+    const K = 1.7;
+    const push = (px, py, pw, ph, color) => parts.push([
+      Math.round(px * K), Math.round(py * K), Math.round(pw * K), Math.round(ph * K), color,
+    ]);
+    const moving = v.moving && !p.jump;
+    const run = moving ? Math.sin(v.run * 17) : 0;
+    const tuck = p.jump ? 12 : 0;
+    const swing = run * 4;
+    const legH = 20 - tuck;
+
+    push(-8 + swing, -legH - 6, 6, legH, c.leg);
+    push(2 - swing, -legH - 6, 6, legH, c.leg);
+    push(-10 + swing, -7 - (p.jump ? 8 : 0), 9, 7, '#0b0b10');
+    push(1 - swing, -7 - (p.jump ? 8 : 0), 9, 7, c.shoe);
+
+    if (p.jump) {
+      push(-9, -30 - tuck, 18, 9, c.leg);
+      push(-9, -54, 18, 25, c.body);
+      push(2, -66, 5, 16, c.body);
+      push(-8, -60, 5, 12, c.body);
+    } else if (p.protect) {
+      push(-9, -30, 18, 10, c.leg);
+      push(-9, -53, 18, 24, c.body);
+      push(2, -50, 6, 14, c.body);
+      push(-8, -50, 6, 14, c.body);
+    } else if (p.move) {
+      push(-9, -31, 18, 10, c.leg);
+      push(-9, -53, 18, 23, c.body);
+      push(4, -48, 6, 16, c.body);
+      push(-9, -46, 4, 12, c.body);
+    } else if (p.brace) {
+      push(-9, -30, 18, 10, c.leg);
+      push(-9, -53, 18, 24, c.body);
+      push(3, -52, 9, 5, c.body);
+      push(-12, -52, 9, 5, c.body);
+    } else {
+      push(-9, -30, 18, 10, c.leg);
+      push(-9, -53, 18, 24, c.body);
+      push(4 + Math.max(0, run) * 2, -47, 5, 15, c.body);
+      push(-9 - Math.max(0, -run) * 2, -45, 4, 12, c.body);
+    }
+
+    /* jersey trim */
+    push(-9, -32, 18, 2, '#0b0b10');
+
+    /* head */
+    push(-5, -64, 10, 11, c.head);
+    push(-5, -64, 10, 3, '#0b0b10');
+
+    g.fillStyle = '#0b0b10';
+    for (const pt of parts) g.fillRect(pt[0] - 1, pt[1] - 1, pt[2] + 2, pt[3] + 2);
+    for (const pt of parts) {
+      g.fillStyle = pt[4];
+      g.fillRect(pt[0], pt[1], pt[2], pt[3]);
+    }
+    g.restore();
+
+    /* jersey number, drawn unmirrored so it reads on both sides */
+    const ny = Math.round(feet - 90);
+    const nx = Math.round(p.x);
+    g.fillStyle = p.side === 'p1' ? '#0b0b10' : '#e8e8ee';
+    if (p.num === 1) {
+      g.fillRect(nx - 1, ny, 4, 14);
+      g.fillRect(nx - 5, ny, 4, 4);
+    } else {
+      g.fillRect(nx - 6, ny, 12, 3);
+      g.fillRect(nx + 3, ny + 3, 3, 5);
+      g.fillRect(nx - 6, ny + 6, 12, 3);
+      g.fillRect(nx - 6, ny + 9, 3, 5);
+      g.fillRect(nx - 6, ny + 12, 12, 3);
+    }
+
+    /* stun stars */
+    if (p.stun > 0) {
+      g.fillStyle = '#b8bfe8';
+      const t = match.time * 10;
+      for (let i = 0; i < 3; i++) {
+        const a = t + i * 2.1;
+        g.fillRect(Math.round(p.x - 15 + Math.cos(a) * 20), Math.round(feet - 140 + Math.sin(a) * 6), 4, 4);
+      }
+    }
+
+    /* possession arrow above the handler */
+    if (p.role === 'off') {
+      g.fillStyle = 'rgba(184,191,232,0.85)';
+      const bob = Math.sin(match.time * 5) * 2;
+      g.fillRect(Math.round(p.x) - 5, Math.round(feet - 156 + bob), 10, 3);
+      g.fillRect(Math.round(p.x) - 3, Math.round(feet - 153 + bob), 6, 3);
+    }
+  }
+
+  function handBallPos(p) {
+    const jh = jumpH(p);
+    const feet = FLOOR - jh;
+    let face = p.facing || 1;
+    if (p.role === 'off' && Math.abs(p.vx) < 18) face = B.attackDir(p.side);
+    if (p.jump) return { x: p.x + face * 24, y: feet - 124 };
+    if (p.protect) return { x: p.x + face * 28, y: feet - 94 };
+    if (p.move) return { x: p.x + face * 36, y: feet - 56 };
+    const bounce = Math.abs(Math.sin(match.time * 6.5)) * 38;
+    return { x: p.x + face * 33, y: feet - (20 + bounce) };
+  }
+
+  function drawBallAt(x, y) {
+    ctx.beginPath();
+    ctx.arc(x, y, BALL_R, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#0b0b10';
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - BALL_R, y);
+    ctx.lineTo(x + BALL_R, y);
+    ctx.moveTo(x, y - BALL_R);
+    ctx.lineTo(x, y + BALL_R);
+    ctx.stroke();
+  }
+
+  function drawBall() {
+    const b = match.ball;
+    if (!b) return;
+    if (b.mode === 'flight' && b.phys) {
+      const trail = b.phys.trail || [];
+      ctx.fillStyle = 'rgba(255,255,255,0.20)';
+      for (const pt of trail) ctx.fillRect(Math.round(pt.x) - 1, Math.round(pt.y) - 1, 3, 3);
+      drawBallAt(b.x, b.y);
+      return;
+    }
+    if (b.mode !== 'held') return;
+    const p = match.players[b.side];
+    if (!p) return;
+    const pos = handBallPos(p);
+    drawBallAt(pos.x, pos.y);
+  }
+
+  function drawShotMeter() {
+    const off = match.players[match.offSide];
+    if (!off || off.role !== 'off') return;
+    if (!match.human.includes(off.side)) return;
+    if (match.ball.mode !== 'held' || !off.jump) return;
+    const jh = jumpH(off);
+    const y = FLOOR - jh - 220;
+    const w = 72;
+    const x = off.x - w / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillRect(x - 2, y - 2, w + 4, 14);
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, 10);
+    ctx.fillStyle = 'rgba(184,191,232,0.45)';
+    ctx.fillRect(x + w * 0.3, y + 1, w * 0.4, 9);
+    const q = 1 - Math.abs(off.jump.t / off.jump.dur - 0.5) * 2;
+    const nx = x + Math.max(0.02, Math.min(0.98, q)) * w;
+    ctx.fillStyle = q > 0.72 ? '#b8bfe8' : '#ffffff';
+    ctx.fillRect(Math.round(nx) - 1, y, 3, 11);
+  }
+
+  function drawEffects() {
+    if (!match.effects.length) return;
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(184,191,232,0.85)';
+    for (const e of match.effects) {
+      const fade = Math.max(0, 1 - e.t / e.dur);
+      ctx.globalAlpha = fade;
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowBlur = e.big ? 14 : 6;
+      ctx.font = (e.big ? '14px ' : '10px ') + '"Press Start 2P", monospace';
+      ctx.fillText(e.text, e.x, e.y - e.t * 28);
+    }
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    ctx.textAlign = 'left';
+  }
+
+  function drawPhaseText() {
+    if (match.phase !== 'check') return;
+    ctx.textAlign = 'center';
+    ctx.font = '14px "Press Start 2P", monospace';
+    ctx.fillStyle = 'rgba(184,191,232,0.9)';
+    ctx.shadowColor = 'rgba(184,191,232,0.8)';
+    ctx.shadowBlur = 16;
+    ctx.fillText('CHECK BALL', W / 2, 190);
+    ctx.shadowBlur = 0;
+    ctx.textAlign = 'left';
+  }
+
+  function draw() {
+    if (!courtLayer) courtLayer = buildCourt();
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(courtLayer, 0, 0);
+    const defP = match.players[match.defSide];
+    const offP = match.players[match.offSide];
+    drawPlayer(ctx, defP, view[defP.side]);
+    drawPlayer(ctx, offP, view[offP.side]);
+    drawBall();
+    drawShotMeter();
+    drawEffects();
+    drawPhaseText();
+  }
+
+  function updateView(dt) {
+    ['p1', 'p2'].forEach((side) => {
+      const p = match.players[side];
+      const v = view[side];
+      v.moving = Math.abs(p.vx) > 18;
+      if (v.moving) v.run += dt;
+      else v.run = 0;
+    });
+  }
+
+  /* ============================================================
+     MAIN LOOP
+     ============================================================ */
+  function loop(now) {
+    requestAnimationFrame(loop);
+
+    const dt = lastNow ? Math.min(0.05, (now - lastNow) / 1000) : 0.016;
+    lastNow = now;
+    if (screen !== 'game' || !match) return;
+
+    match.setHeld('p1', { left: keys.p1.left, right: keys.p1.right, down: keys.p1.down });
+    if (match.mode === '2p') {
+      match.setHeld('p2', { left: keys.p2.left, right: keys.p2.right, down: keys.p2.down });
+    }
+
+    match.update(dt);
+    updateView(dt);
+    draw();
+    syncHud();
+    if (match.phase === 'over' && overlayEl.hidden) showMatchOverlay();
+  }
+
+  /* ============================================================
+     WIRE UP
+     ============================================================ */
+  document.querySelectorAll('[data-mode]').forEach((btn) => {
+    btn.addEventListener('click', () => selectMode(btn.getAttribute('data-mode')));
+  });
+  setupStartBtn.addEventListener('click', startSelected);
+  bracketPlayBtn.addEventListener('click', playSeasonMatch);
+  bracketQuitBtn.addEventListener('click', () => { match = null; setScreen('setup'); });
+  $('reportAgain').addEventListener('click', startSeason);
+  $('reportModes').addEventListener('click', () => { match = null; setScreen('setup'); });
+  $('reportBasketball').addEventListener('click', () => { window.location.href = 'game-basketball.html'; });
+
+  requestAnimationFrame(loop);
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { courtLayer = null; });
+  }
+
+  /* ---------------- boot from query params ---------------- */
+  const params = new URLSearchParams(window.location.search);
+  const mode = params.get('mode');
+  if (mode === 'season') {
+    startSeason();
+  } else if (mode === 'cpu' || mode === '2p') {
+    selectMode(mode);
+    if (params.get('start') === '1') startSelected();
+  }
+
+  /* small read-only hook for the local test harness and browser console */
+  window.PC_HOOPS = {
+    get match() { return match; },
+    get season() { return season; },
+    get screen() { return screen; },
+  };
+
+  /* hidden preview hook used for screenshot checks */
+  const preview = params.get('preview');
+  if (preview === 'champions' || preview === 'eliminated') {
+    season = B.createSeason({ rng: Math.random });
+    const fake = (sa, sb, fgm, fga, tpm, tpa, stl, ankle) => ({
+      win: sa > sb, sa: sa, sb: sb,
+      stats: { fgm: fgm, fga: fga, tpm: tpm, tpa: tpa, stl: stl, blk: 0, ankle: ankle, to: 1 },
+    });
+    season.recordPlayerResult(fake(7, 3, 4, 8, 1, 2, 1, 1));
+    if (preview === 'champions') {
+      season.recordPlayerResult(fake(11, 8, 5, 10, 2, 4, 2, 2));
+      season.recordPlayerResult(fake(15, 12, 6, 11, 2, 5, 1, 2));
+    }
+    // preview only — never persist fake rings / season best to localStorage
+    showReport(false);
+  }
+})();
+</script>
+
+</body>
+</html>

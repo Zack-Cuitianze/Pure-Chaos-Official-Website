@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game Center — Pure Chaos</title>
+<meta name="description" content="Pure Chaos — Game center. Four arcade machines, no quarters required.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-title" content="Pure Chaos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/vt323.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/games.css">
+</head>
+<body class="arcade">
+
+<header class="nav" role="banner">
+  <div class="nav__inner">
+
+    <a class="brand" href="index.html" aria-label="Pure Chaos — home">
+      <img class="brand__mark" src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+
+    <nav class="nav__links" aria-label="Primary">
+      <a class="glass-btn" href="brands.html"><span>brands</span></a>
+      <a class="glass-btn" href="about.html"><span>about us</span></a>
+      <a class="glass-btn" href="articles.html"><span>articles</span></a>
+    </nav>
+
+  </div>
+</header>
+
+<main class="games">
+  <p class="arcade-kicker">Pure Chaos // Arcade</p>
+  <h1 class="games__title" id="gamesTitle">Game Center<span class="blink-block" aria-hidden="true"></span></h1>
+  <p class="coin-line">Insert Coin — Select A Game</p>
+
+  <section class="game-grid" aria-label="Games">
+
+    <a class="game-card" href="game-racing.html">
+      <span class="game-card__led" aria-hidden="true"></span>
+      <span class="game-card__num">01</span>
+      <h2 class="game-card__name">Racing</h2>
+      <p class="game-card__sub">Dodge traffic · don't crash</p>
+      <span class="game-card__foot">
+        <span class="game-card__best" data-best="pc_racing_best" data-suffix=" M">HI ----</span>
+        <span class="game-card__go">Press start</span>
+      </span>
+    </a>
+
+    <a class="game-card" href="game-chess.html">
+      <span class="game-card__led" aria-hidden="true"></span>
+      <span class="game-card__num">02</span>
+      <h2 class="game-card__name">Chess</h2>
+      <p class="game-card__sub">5 levels · time controls · 2 players</p>
+      <span class="game-card__foot">
+        <span class="game-card__best">Full rules</span>
+        <span class="game-card__go">Press start</span>
+      </span>
+    </a>
+
+    <a class="game-card" href="game-basketball.html">
+      <span class="game-card__led" aria-hidden="true"></span>
+      <span class="game-card__num">03</span>
+      <h2 class="game-card__name">Basketball</h2>
+      <p class="game-card__sub">3 games · shootout · 1-on-1 · season</p>
+      <span class="game-card__foot">
+        <span class="game-card__best" data-best="pc_hoops_best" data-suffix="/10">HI --</span>
+        <span class="game-card__go">Press start</span>
+      </span>
+    </a>
+
+    <a class="game-card" href="game-2048.html">
+      <span class="game-card__led" aria-hidden="true"></span>
+      <span class="game-card__num">04</span>
+      <h2 class="game-card__name">2048</h2>
+      <p class="game-card__sub">Slide · merge · 2048</p>
+      <span class="game-card__foot">
+        <span class="game-card__best" data-best="pc_2048_best">HI ----</span>
+        <span class="game-card__go">Press start</span>
+      </span>
+    </a>
+
+  </section>
+
+  <p class="arcade-note">Hi-scores are saved in this browser. All four machines run offline.</p>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer__inner">
+    <a class="footer__brand" href="index.html" aria-label="Pure Chaos — home">
+      <img src="assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="footer__cols" aria-label="Footer">
+      <ul class="footer__col">
+        <li><a href="#">Privacy policies</a></li>
+        <li><a href="#">Do not share my personal data</a></li>
+        <li><a href="#">Collaborations</a></li>
+        <li><a href="#">We care about your well-being</a></li>
+        <li><a href="#">Cookies</a></li>
+        <li><a href="#">Terms of use</a></li>
+        <li><a href="#">Sitemap</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Contact us</a></li>
+      </ul>
+      <ul class="footer__col">
+        <li><a href="#">Assets free for downloading</a></li>
+        <li><a href="#">Members of the club</a></li>
+        <li><a href="#">External links</a></li>
+        <li><a href="#">Contributors</a></li>
+      </ul>
+    </nav>
+    <a class="footer__game" href="games.html"><span class="game__fx" aria-hidden="true"><span class="game__invader"></span><span class="game__coin">INSERT COIN</span></span><span class="game__label">Game center <span class="game__arrow">-&gt;</span></span></a>
+  </div>
+</footer>
+
+<!-- hi-score loader -->
+<script>
+(() => {
+  'use strict';
+  document.querySelectorAll('[data-best]').forEach((el) => {
+    try {
+      const v = localStorage.getItem(el.getAttribute('data-best'));
+      if (v !== null && v !== '') {
+        el.textContent = 'HI ' + v + (el.getAttribute('data-suffix') || '');
+      }
+    } catch (e) { /* private mode */ }
+  });
+})();
+</script>
+
+</body>
+</html>
