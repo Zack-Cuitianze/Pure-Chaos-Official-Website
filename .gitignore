@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Obsidian — volatile editor/UI state (regenerated every session)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# local scratch
+.chrome-cdp/
