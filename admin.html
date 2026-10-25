@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Brands admin — Pure Chaos</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#050508">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  :root {
+    --bg: #050508;
+    --panel: rgba(255, 255, 255, 0.035);
+    --panel-2: rgba(255, 255, 255, 0.055);
+    --line: rgba(255, 255, 255, 0.10);
+    --line-soft: rgba(255, 255, 255, 0.06);
+    --fg: #f4f5f8;
+    --muted: rgba(255, 255, 255, 0.62);
+    --faint: rgba(255, 255, 255, 0.34);
+    --accent: #b8bfe8;
+    --danger: #ff7a86;
+    --ok: #7ee2a8;
+    --radius: 14px;
+    --font: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 40% at 72% 0%, rgba(184, 191, 232, 0.10), transparent 70%),
+      radial-gradient(50% 40% at 0% 100%, rgba(184, 191, 232, 0.05), transparent 70%);
+  }
+  @font-face {
+    font-family: "Geist";
+    src: url("assets/fonts/geist-variable.woff2") format("woff2");
+    font-weight: 100 900;
+    font-display: swap;
+  }
+
+  .top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--line-soft);
+    background: rgba(5, 5, 8, 0.82);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+  }
+  .top__brand { font-weight: 650; letter-spacing: -0.01em; }
+  .top__brand span { color: var(--faint); font-weight: 500; margin-left: 8px; }
+  .top__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+
+  main {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 34px 24px 90px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 0.5px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin-bottom: 18px;
+  }
+  .panel__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .panel h2 { margin: 0; font-size: 16px; font-weight: 600; }
+  .panel h1 { margin: 0 0 8px; font-size: 22px; letter-spacing: -0.02em; }
+
+  label { display: block; margin: 0 0 12px; color: var(--muted); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+  label:last-child { margin-bottom: 0; }
+  input[type="text"], input[type="url"], input[type="password"], input:not([type]), textarea {
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 0.5px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--fg);
+    font: inherit;
+    font-size: 14px;
+    letter-spacing: 0;
+    text-transform: none;
+    outline: none;
+    transition: border-color 160ms ease, background 160ms ease;
+  }
+  input:focus, textarea:focus { border-color: rgba(184, 191, 232, 0.55); background: rgba(255, 255, 255, 0.06); }
+  textarea { resize: vertical; min-height: 64px; }
+
+  button {
+    appearance: none;
+    border: 0.5px solid var(--line);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--fg);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 550;
+    padding: 8px 14px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+  }
+  button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.10); border-color: rgba(255, 255, 255, 0.18); }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button.primary { background: var(--accent); border-color: transparent; color: #10121a; font-weight: 650; }
+  button.primary:hover:not(:disabled) { background: #cdd3f5; }
+  button.danger { color: var(--danger); border-color: rgba(255, 122, 134, 0.35); background: rgba(255, 122, 134, 0.06); }
+  button.danger:hover:not(:disabled) { background: rgba(255, 122, 134, 0.12); }
+  button.ghost { background: transparent; }
+  a.link { color: var(--accent); text-decoration: none; font-size: 13px; }
+  a.link:hover { text-decoration: underline; }
+
+  .status { font-size: 12px; color: var(--faint); border: 0.5px solid transparent; border-radius: 99px; padding: 4px 10px; }
+  .status[data-state="ok"] { color: var(--ok); }
+  .status[data-state="dirty"] { color: #f0d48a; }
+  .status[data-state="error"] { color: var(--danger); }
+  .status[data-state="busy"] { color: var(--accent); }
+
+  .login { max-width: 420px; margin: 12vh auto 0; }
+  .login p { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  .login code { color: var(--accent); font-size: 12px; }
+  .login form { display: flex; gap: 10px; }
+  .login input { margin-top: 0; }
+  .error { color: var(--danger); font-size: 13px; margin: 12px 0 0; }
+
+  .list { display: flex; flex-direction: column; gap: 14px; }
+  .brand {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 18px;
+    padding: 16px;
+    border: 0.5px solid var(--line-soft);
+    border-radius: 12px;
+    background: var(--panel-2);
+  }
+  .brand__logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 110px;
+    border: 0.5px dashed var(--line);
+    border-radius: 10px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.22);
+    overflow: hidden;
+  }
+  .brand__preview { max-width: 100%; max-height: 64px; object-fit: contain; }
+  .brand__preview[hidden] { display: none; }
+  .brand__drop { display: flex; gap: 6px; }
+  .brand__fields { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+  .brand__fields label { margin-bottom: 10px; }
+  .brand__row { display: grid; grid-template-columns: 1.4fr 1fr 1.4fr; gap: 12px; }
+  .brand__row label { margin-bottom: 0; }
+  .brand__scale { width: 100%; accent-color: var(--accent); margin-top: 10px; }
+  .brand__actions { display: flex; gap: 8px; margin-top: 14px; }
+  .brand__actions .danger { margin-left: auto; }
+
+  @media (max-width: 760px) {
+    .top { padding: 12px 16px; }
+    .top__brand span { display: none; }
+    main { padding: 22px 16px 70px; }
+    .brand { grid-template-columns: 1fr; }
+    .brand__logo { min-height: 90px; }
+    .brand__row { grid-template-columns: 1fr; }
+    .panel { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top__brand">Pure Chaos <span>brands admin</span></div>
+  <div class="top__actions">
+    <span id="status" class="status" data-state="idle">locked</span>
+    <a class="link" href="brands.html" target="_blank" rel="noopener">view page</a>
+    <button id="reload" class="ghost" type="button" disabled>reload</button>
+    <button id="save" class="primary" type="button" disabled>save</button>
+    <button id="lock" class="ghost" type="button" disabled>lock</button>
+  </div>
+</header>
+
+<main>
+  <section id="login" class="panel login" aria-labelledby="loginTitle">
+    <h1 id="loginTitle">Admin token</h1>
+    <p>Paste the token printed by <code>node server.js</code>. It is kept in this tab only and sent as a Bearer token for writes.</p>
+    <form id="loginForm">
+      <input id="tokenInput" type="password" autocomplete="off" placeholder="admin token" required>
+      <button class="primary" type="submit">unlock</button>
+    </form>
+    <p id="loginError" class="error" hidden>That token was not accepted.</p>
+  </section>
+
+  <section id="editor" hidden>
+    <div class="panel">
+      <h2>Page</h2>
+      <label>Title
+        <input id="pageTitle" type="text" maxlength="120" placeholder="Meet our brands.">
+      </label>
+      <label>Intro
+        <textarea id="pageIntro" rows="3" maxlength="500" placeholder="A line under the page title."></textarea>
+      </label>
+    </div>
+
+    <div class="panel">
+      <div class="panel__head">
+        <h2>Brands</h2>
+        <button id="addBrand" class="ghost" type="button">+ add brand</button>
+      </div>
+      <div id="brandList" class="list"></div>
+    </div>
+  </section>
+</main>
+
+<template id="brandTpl">
+  <div class="brand">
+    <div class="brand__logo">
+      <img class="brand__preview" alt="" hidden>
+      <div class="brand__drop">
+        <input class="brand__file" type="file" accept=".svg,.png,.jpg,.jpeg,.webp,.gif,image/*" hidden>
+        <button class="brand__upload ghost" type="button">upload logo</button>
+      </div>
+    </div>
+    <div class="brand__fields">
+      <label>Name
+        <input class="brand__name" type="text" maxlength="80">
+      </label>
+      <label>Description
+        <textarea class="brand__desc" rows="2" maxlength="400"></textarea>
+      </label>
+      <div class="brand__row">
+        <label>Logo path
+          <input class="brand__logoPath" type="text" maxlength="300" placeholder="assets/…">
+        </label>
+        <label>Logo scale
+          <input class="brand__scale" type="range" min="0.4" max="2" step="0.05" value="1">
+        </label>
+        <label>Link (optional)
+          <input class="brand__url" type="url" maxlength="500" placeholder="https://…">
+        </label>
+      </div>
+      <div class="brand__actions">
+        <button class="brand__up ghost" type="button" title="move up">↑</button>
+        <button class="brand__down ghost" type="button" title="move down">↓</button>
+        <button class="brand__delete danger" type="button">delete</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+(() => {
+  'use strict';
+
+  const TOKEN_KEY = 'pc_admin_token';
+  const $ = (sel, root = document) => root.querySelector(sel);
+
+  const els = {
+    status: $('#status'),
+    login: $('#login'),
+    loginForm: $('#loginForm'),
+    loginError: $('#loginError'),
+    tokenInput: $('#tokenInput'),
+    editor: $('#editor'),
+    pageTitle: $('#pageTitle'),
+    pageIntro: $('#pageIntro'),
+    brandList: $('#brandList'),
+    addBrand: $('#addBrand'),
+    save: $('#save'),
+    reload: $('#reload'),
+    lock: $('#lock'),
+  };
+
+  let token = sessionStorage.getItem(TOKEN_KEY) || '';
+  let data = null;
+  let dirty = false;
+
+  function setStatus(text, state) {
+    els.status.textContent = text;
+    els.status.dataset.state = state || 'idle';
+  }
+
+  async function api(path, options = {}) {
+    const headers = Object.assign({ Accept: 'application/json' }, options.headers || {});
+    if (token) headers.Authorization = 'Bearer ' + token;
+    if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+    const res = await fetch(path, Object.assign({}, options, { headers }));
+    const raw = await res.text();
+    let body = null;
+    try { body = raw ? JSON.parse(raw) : null; } catch { body = { error: raw }; }
+    if (!res.ok) {
+      const error = new Error(body && body.error ? body.error : 'HTTP ' + res.status);
+      error.status = res.status;
+      throw error;
+    }
+    return body;
+  }
+
+  function markDirty() {
+    dirty = true;
+    els.save.disabled = false;
+    setStatus('unsaved changes', 'dirty');
+  }
+
+  function normalize(doc) {
+    const page = doc && doc.page ? doc.page : {};
+    const brands = Array.isArray(doc && doc.brands) ? doc.brands : [];
+    return {
+      revision: Number(doc && doc.revision) || 0,
+      page: {
+        title: typeof page.title === 'string' ? page.title : '',
+        intro: typeof page.intro === 'string' ? page.intro : '',
+      },
+      brands: brands.map((brand, index) => ({
+        id: brand.id || '',
+        name: brand.name || '',
+        description: brand.description || '',
+        logo: brand.logo || '',
+        logoScale: Number.isFinite(Number(brand.logoScale)) ? Number(brand.logoScale) : 1,
+        url: brand.url || '',
+        order: Number.isFinite(Number(brand.order)) ? Number(brand.order) : index + 1,
+      })),
+    };
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error || new Error('could not read file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function brandEditor(brand, index) {
+    const node = $('#brandTpl').content.firstElementChild.cloneNode(true);
+    const preview = $('.brand__preview', node);
+    const file = $('.brand__file', node);
+    const upload = $('.brand__upload', node);
+    const name = $('.brand__name', node);
+    const desc = $('.brand__desc', node);
+    const logoPath = $('.brand__logoPath', node);
+    const scale = $('.brand__scale', node);
+    const url = $('.brand__url', node);
+
+    name.value = brand.name;
+    desc.value = brand.description;
+    logoPath.value = brand.logo;
+    scale.value = String(brand.logoScale);
+    url.value = brand.url;
+
+    function refreshPreview() {
+      if (brand.logo) {
+        preview.hidden = false;
+        preview.src = brand.logo;
+      } else {
+        preview.hidden = true;
+      }
+    }
+    refreshPreview();
+    preview.addEventListener('error', () => { preview.hidden = true; });
+
+    name.addEventListener('input', () => { brand.name = name.value; markDirty(); });
+    desc.addEventListener('input', () => { brand.description = desc.value; markDirty(); });
+    logoPath.addEventListener('input', () => { brand.logo = logoPath.value.trim(); refreshPreview(); markDirty(); });
+    scale.addEventListener('input', () => { brand.logoScale = Number(scale.value); markDirty(); });
+    url.addEventListener('input', () => { brand.url = url.value.trim(); markDirty(); });
+
+    upload.addEventListener('click', () => file.click());
+
+    file.addEventListener('change', async () => {
+      const picked = file.files && file.files[0];
+      file.value = '';
+      if (!picked) return;
+      if (picked.size > 2 * 1024 * 1024) {
+        setStatus('image too large (max 2 MB)', 'error');
+        return;
+      }
+      setStatus('uploading…', 'busy');
+      try {
+        const dataUrl = await readFileAsDataUrl(picked);
+        const uploaded = await api('/api/upload', {
+          method: 'POST',
+          body: JSON.stringify({ filename: picked.name, data: dataUrl }),
+        });
+        brand.logo = uploaded.path;
+        logoPath.value = uploaded.path;
+        refreshPreview();
+        markDirty();
+        setStatus('logo uploaded', 'ok');
+      } catch (error) {
+        setStatus('upload failed: ' + error.message, 'error');
+      }
+    });
+
+    $('.brand__up', node).addEventListener('click', () => move(index, -1));
+    $('.brand__down', node).addEventListener('click', () => move(index, 1));
+    $('.brand__delete', node).addEventListener('click', () => {
+      if (!confirm('Delete "' + (brand.name || 'this brand') + '"?')) return;
+      data.brands.splice(index, 1);
+      render();
+      markDirty();
+    });
+
+    return node;
+  }
+
+  function move(index, direction) {
+    const next = index + direction;
+    if (next < 0 || next >= data.brands.length) return;
+    const [item] = data.brands.splice(index, 1);
+    data.brands.splice(next, 0, item);
+    render();
+    markDirty();
+  }
+
+  function render() {
+    els.pageTitle.value = data.page.title;
+    els.pageIntro.value = data.page.intro;
+    els.brandList.textContent = '';
+    data.brands.forEach((brand, index) => els.brandList.appendChild(brandEditor(brand, index)));
+  }
+
+  async function load() {
+    const doc = await api('/api/brands');
+    data = normalize(doc);
+    dirty = false;
+    els.save.disabled = true;
+    render();
+    setStatus('saved', 'ok');
+  }
+
+  async function save() {
+    els.save.disabled = true;
+    setStatus('saving…', 'busy');
+    try {
+      const payload = {
+        revision: data.revision,
+        page: { title: els.pageTitle.value, intro: els.pageIntro.value },
+        brands: data.brands.map((brand, index) => Object.assign({}, brand, { order: index + 1 })),
+      };
+      const saved = await api('/api/brands', { method: 'PUT', body: JSON.stringify(payload) });
+      data = normalize(saved);
+      dirty = false;
+      els.save.disabled = true;
+      render();
+      setStatus('saved', 'ok');
+    } catch (error) {
+      if (error.status === 409) setStatus('conflict — reload and try again', 'error');
+      else setStatus('save failed: ' + error.message, 'error');
+      els.save.disabled = false;
+    }
+  }
+
+  async function unlock(candidate) {
+    token = candidate;
+    try {
+      await api('/api/auth');
+    } catch (error) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      token = '';
+      throw error;
+    }
+    sessionStorage.setItem(TOKEN_KEY, token);
+    els.login.hidden = true;
+    els.loginError.hidden = true;
+    els.editor.hidden = false;
+    els.save.disabled = true;
+    els.reload.disabled = false;
+    els.lock.disabled = false;
+    setStatus('loading…', 'busy');
+    await load();
+  }
+
+  els.loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const value = els.tokenInput.value.trim();
+    if (!value) return;
+    try {
+      await unlock(value);
+      els.tokenInput.value = '';
+    } catch {
+      els.loginError.hidden = false;
+    }
+  });
+
+  els.save.addEventListener('click', save);
+
+  els.reload.addEventListener('click', async () => {
+    if (dirty && !confirm('Discard unsaved changes?')) return;
+    setStatus('loading…', 'busy');
+    try { await load(); } catch (error) { setStatus('reload failed: ' + error.message, 'error'); }
+  });
+
+  els.addBrand.addEventListener('click', () => {
+    data.brands.push({
+      id: '',
+      name: 'New brand',
+      description: '',
+      logo: '',
+      logoScale: 1,
+      url: '',
+      order: data.brands.length + 1,
+    });
+    render();
+    markDirty();
+  });
+
+  els.pageTitle.addEventListener('input', () => { data.page.title = els.pageTitle.value; markDirty(); });
+  els.pageIntro.addEventListener('input', () => { data.page.intro = els.pageIntro.value; markDirty(); });
+
+  els.lock.addEventListener('click', () => {
+    if (dirty && !confirm('Discard unsaved changes and lock?')) return;
+    sessionStorage.removeItem(TOKEN_KEY);
+    location.reload();
+  });
+
+  window.addEventListener('beforeunload', (event) => {
+    if (!dirty) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
+
+  if (token) {
+    unlock(token).catch(() => {
+      els.login.hidden = false;
+      els.editor.hidden = true;
+      setStatus('locked', 'idle');
+    });
+  }
+})();
+</script>
+
+</body>
+</html>

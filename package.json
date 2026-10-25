@@ -1,0 +1,13 @@
+{
+  "name": "pure-chaos-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pure Chaos official website — static pages plus a tiny zero-dependency brands content server.",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

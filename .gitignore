@@ -7,3 +7,10 @@
 
 # local scratch
 .chrome-cdp/
+logs/
+
+# brands admin runtime
+data/backups/
+.env
+.env.*
+!.env.example

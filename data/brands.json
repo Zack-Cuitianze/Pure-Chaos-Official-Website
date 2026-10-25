@@ -1,0 +1,36 @@
+{
+  "revision": 1,
+  "page": {
+    "title": "Meet our brands.",
+    "intro": "Three houses, one practice — each with its own voice, all built on the same belief: meaning is made, not found."
+  },
+  "brands": [
+    {
+      "id": "zack",
+      "name": "Zack",
+      "description": "Check out more things from an independent creator.",
+      "logo": "assets/Zack.svg",
+      "logoScale": 1.05,
+      "url": "",
+      "order": 1
+    },
+    {
+      "id": "why",
+      "name": "Why",
+      "description": "The brand which pioneers in those cutting-edge fields.",
+      "logo": "assets/Why.svg",
+      "logoScale": 1,
+      "url": "",
+      "order": 2
+    },
+    {
+      "id": "unparalleled",
+      "name": "Unparalleled",
+      "description": "Unmatched spirit inside. Apt, then opt.",
+      "logo": "assets/Unparallel.svg",
+      "logoScale": 0.75,
+      "url": "",
+      "order": 3
+    }
+  ]
+}
