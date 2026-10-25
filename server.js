@@ -283,6 +283,7 @@ async function serveStatic(req, res, pathname) {
   res.writeHead(200, {
     'Content-Type': type,
     'Content-Length': body.length,
+    'Last-Modified': stat.mtime.toUTCString(),
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
   });

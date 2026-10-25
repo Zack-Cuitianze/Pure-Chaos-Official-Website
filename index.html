@@ -116,7 +116,7 @@
   const useSource = (path) => {
     /* rare fallback: no display derivative — point the layer at the source.
        (the normal path is a direct url() in CSS so it loads on first paint) */
-    if (pageArt) pageArt.style.backgroundImage = 'url("' + encodeURI(path.replace(/^assets\//, '')) + '")';
+    if (pageArt) pageArt.style.backgroundImage = 'url("' + encodeURI(path) + '")';
   };
   const confirm = (path) => {
     window.__pcArtPath = path;
@@ -144,25 +144,25 @@
     return;
   }
 
-  const lastModified = (path) => fetch(encodeURI(path), { method: 'HEAD', cache: 'no-store' })
-    .then((res) => (res.ok ? (res.headers.get('last-modified') || '') : null))
-    .catch(() => null);
+  const headInfo = (path) => fetch(encodeURI(path), { method: 'HEAD', cache: 'no-store' })
+    .then((res) => ({ ok: res.ok, mtime: res.headers.get('last-modified') || '' }))
+    .catch(() => ({ ok: false, mtime: '' }));
   const pickDisplay = async (srcPath) => {
     const disp = displayPathFor(srcPath);
-    const res = await Promise.all([lastModified(srcPath), lastModified(disp)]);
-    if (!res[1]) return srcPath;
-    if (!res[0]) return disp;
-    const sTime = Date.parse(res[0]);
-    const dTime = Date.parse(res[1]);
-    if (isNaN(sTime) || isNaN(dTime)) return disp;
-    return dTime < sTime - 1000 ? srcPath : disp;   /* stale derivative -> source */
+    const [src, dst] = await Promise.all([headInfo(srcPath), headInfo(disp)]);
+    if (!dst.ok) return srcPath;                    /* no display copy */
+    if (!src.ok) return disp;
+    if (src.mtime && dst.mtime) {
+      const sTime = Date.parse(src.mtime);
+      const dTime = Date.parse(dst.mtime);
+      if (!isNaN(sTime) && !isNaN(dTime) && dTime < sTime - 1000) return srcPath; /* stale */
+    }
+    return disp;                                    /* default: prefer the display copy */
   };
   (async () => {
     for (let i = 0; i < NAMES.length; i++) {
-      const ok = await fetch(encodeURI(NAMES[i]), { method: 'HEAD', cache: 'no-store' })
-        .then((res) => res.ok)
-        .catch(() => false);
-      if (!ok) continue;
+      const head = await headInfo(NAMES[i]);
+      if (!head.ok) continue;
       confirm(await pickDisplay(NAMES[i]));
       return;
     }
