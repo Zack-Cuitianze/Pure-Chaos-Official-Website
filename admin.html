@@ -162,6 +162,7 @@
                 <div class="radios">
                   <label class="radio"><input type="radio" name="aPrimary" value="markdown"> Markdown article</label>
                   <label class="radio"><input type="radio" name="aPrimary" value="pdf"> PDF edition</label>
+                  <label class="radio"><input type="radio" name="aPrimary" value="html"> Self-contained HTML page</label>
                 </div>
                 <p class="muted">Only the primary format is shown on the article page; the other format becomes a download link.</p>
               </div>
@@ -187,6 +188,18 @@
                 <p class="muted" id="aPdfInfo">No PDF uploaded.</p>
               </div>
             </div>
+
+            <div style="margin-top: 14px">
+              <span class="field__label">HTML article</span>
+              <div class="file-row">
+                <input id="aHtmlPath" type="text" maxlength="300" placeholder="data/articles/html/…">
+                <button id="aHtmlUpload" class="ghost" type="button">upload .html</button>
+                <input id="aHtmlFile" type="file" accept=".html,text/html" hidden>
+                <button id="aHtmlPreviewBtn" class="ghost" type="button">preview</button>
+              </div>
+              <p class="muted" id="aHtmlInfo">No HTML file uploaded. The file must be self-contained (styles and scripts inside it).</p>
+            </div>
+            <div class="html-preview" id="aHtmlPreview" hidden></div>
 
             <div class="panel__sub">
               <div class="panel__head">

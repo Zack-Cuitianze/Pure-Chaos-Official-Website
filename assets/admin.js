@@ -62,6 +62,12 @@
     aPdfUpload: $('#aPdfUpload'),
     aPdfFile: $('#aPdfFile'),
     aPdfInfo: $('#aPdfInfo'),
+    aHtmlPath: $('#aHtmlPath'),
+    aHtmlUpload: $('#aHtmlUpload'),
+    aHtmlFile: $('#aHtmlFile'),
+    aHtmlPreviewBtn: $('#aHtmlPreviewBtn'),
+    aHtmlInfo: $('#aHtmlInfo'),
+    aHtmlPreview: $('#aHtmlPreview'),
     aMdUploadBtn: $('#aMdUploadBtn'),
     aMdFile: $('#aMdFile'),
     aMdPreviewBtn: $('#aMdPreviewBtn'),
@@ -227,9 +233,10 @@
           date: article.date || '',
           cover: article.cover || '',
           pdf: article.pdf || '',
+          html: article.html || '',
           body: typeof article.body === 'string' ? article.body : '',
           sourceName: article.sourceName || '',
-          primaryFormat: article.primaryFormat === 'pdf' ? 'pdf' : 'markdown',
+          primaryFormat: article.primaryFormat === 'pdf' ? 'pdf' : article.primaryFormat === 'html' ? 'html' : 'markdown',
           createdAt: article.createdAt || new Date().toISOString(),
           updatedAt: article.updatedAt || new Date().toISOString(),
         };
@@ -487,6 +494,10 @@
     el.aCoverPath.value = article.cover;
     refreshCoverPreview(article);
     refreshPdfInfo(article);
+    el.aHtmlPath.value = article.html;
+    refreshHtmlInfo(article);
+    el.aHtmlPreview.hidden = true;
+    el.aHtmlPreview.textContent = '';
     refreshMarkdownInfo(article);
     el.aMdWarnings.hidden = true;
     el.aMdWarnings.textContent = '';
@@ -519,6 +530,58 @@
     link.textContent = 'open PDF in viewer ↗';
     el.aPdfInfo.appendChild(link);
     el.aPdfInfo.appendChild(document.createTextNode(' · ' + article.pdf.split('/').pop()));
+  }
+
+  function refreshHtmlInfo(article) {
+    el.aHtmlInfo.textContent = '';
+    if (!article.html) {
+      el.aHtmlInfo.textContent =
+        'No HTML file uploaded. The file must be self-contained (styles and scripts inside it).';
+      return;
+    }
+    const name = article.html.split('/').pop();
+    const link = document.createElement('a');
+    link.className = 'link';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.href = '/articles/' + encodeURIComponent(article.slug) + '.html';
+    link.textContent = 'download ' + name + ' ↗';
+    el.aHtmlInfo.appendChild(link);
+  }
+
+  function validateStandaloneHtml(text) {
+    const head = String(text || '').replace(/^\uFEFF/, '').trimStart().toLowerCase();
+    return /^<!doctype\s+html/.test(head) || /^<html[\s>]/.test(head);
+  }
+
+  async function previewHtml(article) {
+    if (!article) return;
+    el.aHtmlPreview.textContent = '';
+    el.aHtmlPreview.hidden = false;
+    const iframe = document.createElement('iframe');
+    iframe.title = 'HTML article preview';
+    iframe.setAttribute('sandbox', 'allow-scripts allow-popups allow-forms allow-modals');
+    iframe.setAttribute('referrerpolicy', 'no-referrer');
+    el.aHtmlPreview.appendChild(iframe);
+    try {
+      let html = article._previewHtml;
+      if (!html && article.html) {
+        setStatus('loading HTML preview…', 'busy');
+        const result = await api('/api/articles/html?path=' + encodeURIComponent(article.html));
+        html = result.html;
+        article._previewHtml = html;
+      }
+      if (!html) {
+        el.aHtmlPreview.hidden = true;
+        setStatus('no HTML file yet', 'error');
+        return;
+      }
+      iframe.srcdoc = html;
+      setStatus('HTML preview ready', 'ok');
+    } catch (error) {
+      el.aHtmlPreview.hidden = true;
+      setStatus('HTML preview failed: ' + error.message, 'error');
+    }
   }
 
   function refreshMarkdownInfo(article) {
@@ -696,6 +759,13 @@
       radio.addEventListener('change', () => {
         const article = findArticle(state.activeArticleId);
         if (!article || !radio.checked) return;
+        if (radio.value === 'html' && !article.html) {
+          setStatus('upload an HTML file first', 'error');
+          $$('input[name="aPrimary"]').forEach((item) => {
+            item.checked = item.value === article.primaryFormat;
+          });
+          return;
+        }
         article.primaryFormat = radio.value;
         markDirty('articles');
       });
@@ -768,6 +838,58 @@
       } catch (error) {
         setStatus('PDF upload failed: ' + error.message, 'error');
       }
+    });
+
+    el.aHtmlPath.addEventListener('input', () => {
+      const article = findArticle(state.activeArticleId);
+      if (!article) return;
+      article.html = el.aHtmlPath.value.trim();
+      article._previewHtml = null;
+      refreshHtmlInfo(article);
+      markDirty('articles');
+    });
+
+    el.aHtmlUpload.addEventListener('click', () => el.aHtmlFile.click());
+    el.aHtmlFile.addEventListener('change', async () => {
+      const picked = el.aHtmlFile.files && el.aHtmlFile.files[0];
+      el.aHtmlFile.value = '';
+      if (!picked) return;
+      if (picked.size > 8 * 1024 * 1024) {
+        setStatus('HTML file too large (max 8 MB)', 'error');
+        return;
+      }
+      setStatus('uploading HTML…', 'busy');
+      try {
+        const text = await readFileAsText(picked);
+        if (!validateStandaloneHtml(text)) {
+          setStatus('that file does not look like a standalone HTML document', 'error');
+          return;
+        }
+        const dataUrl = await readFileAsDataUrl(picked);
+        const uploaded = await api('/api/articles/upload', {
+          method: 'POST',
+          body: JSON.stringify({ kind: 'html', filename: picked.name, data: dataUrl }),
+        });
+        const article = findArticle(state.activeArticleId);
+        if (!article) return;
+        article.html = uploaded.path;
+        article._previewHtml = text;
+        article.primaryFormat = 'html';
+        $$('input[name="aPrimary"]').forEach((item) => {
+          item.checked = item.value === 'html';
+        });
+        el.aHtmlPath.value = uploaded.path;
+        refreshHtmlInfo(article);
+        markDirty('articles');
+        setStatus('HTML uploaded', 'ok');
+        previewHtml(article);
+      } catch (error) {
+        setStatus('HTML upload failed: ' + error.message, 'error');
+      }
+    });
+
+    el.aHtmlPreviewBtn.addEventListener('click', () => {
+      previewHtml(findArticle(state.activeArticleId));
     });
 
     el.aMdUploadBtn.addEventListener('click', () => el.aMdFile.click());
@@ -864,6 +986,7 @@
         date: article.date,
         cover: article.cover,
         pdf: article.pdf,
+        html: article.html,
         body: article.body,
         sourceName: article.sourceName,
         primaryFormat: article.primaryFormat,
@@ -874,6 +997,15 @@
 
   async function saveAll() {
     if (state.busy || !anyDirty()) return;
+    if (state.dirty.articles) {
+      const broken = state.articles.articles.find(
+        (article) => article.primaryFormat === 'html' && !article.html
+      );
+      if (broken) {
+        setStatus('article "' + (broken.title || 'untitled') + '" needs an HTML file', 'error');
+        return;
+      }
+    }
     state.busy = true;
     refreshSave();
     setStatus('saving…', 'busy');

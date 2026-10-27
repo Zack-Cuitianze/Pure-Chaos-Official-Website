@@ -9,7 +9,7 @@
  *   GET/PUT  /api/brands            brands page content (write needs token)
  *   GET/PUT  /api/articles          article document (full view needs token)
  *   POST     /api/articles/import   parse an uploaded Markdown file (token)
- *   POST     /api/articles/upload   cover image / PDF upload (token)
+ *   POST     /api/articles/upload   cover / PDF / self-contained HTML upload (token)
  *   POST     /api/preview           render Markdown preview (token)
  *   GET      /api/auth              200 when the token is valid
  *   POST     /api/upload            brand logo upload (token)
@@ -43,6 +43,7 @@ const ARTICLES_FILE = path.join(DATA_DIR, 'articles.json');
 const BACKUP_DIR = path.join(DATA_DIR, 'backups');
 const UPLOAD_DIR = path.join(ROOT, 'assets', 'uploads');
 const ARTICLE_UPLOAD_DIR = path.join(UPLOAD_DIR, 'articles');
+const ARTICLE_HTML_DIR = path.join(DATA_DIR, 'articles', 'html');
 
 const MAX_JSON = 1 * 1024 * 1024;            // brands document
 const MAX_ARTICLES_JSON = 6 * 1024 * 1024;   // article document (bodies included)
@@ -50,6 +51,7 @@ const MAX_MARKDOWN = 2 * 1024 * 1024;        // uploaded .md
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 const MAX_COVER_BYTES = 8 * 1024 * 1024;
 const MAX_PDF_BYTES = 25 * 1024 * 1024;
+const MAX_HTML_BYTES = 8 * 1024 * 1024;   // self-contained HTML article
 const MAX_ARTICLE_BODY = 512 * 1024;
 const ARTICLE_STATUSES = new Set(['draft', 'in-the-works', 'published']);
 
@@ -89,6 +91,7 @@ const ARTICLE_EXTENSIONS = {
   'image/gif': 'gif',
   'image/svg+xml': 'svg',
   'application/pdf': 'pdf',
+  'text/html': 'html',
 };
 
 /* ------------------------------------------------------------------ */
@@ -230,13 +233,20 @@ function validateBrandsDoc(input) {
 }
 
 function validateArticleUploadPath(value, kind) {
-  const pattern = kind === 'pdf'
-    ? /^assets\/uploads\/articles\/[A-Za-z0-9._-]+\.pdf$/
-    : /^assets\/uploads\/articles\/[A-Za-z0-9._-]+\.(png|jpe?g|webp|gif|svg)$/;
-  const text = asText(value, 300);
-  if (text && !pattern.test(text)) {
-    throw httpError(400, kind === 'pdf' ? 'invalid PDF path' : 'invalid cover image path');
+  let pattern;
+  let message;
+  if (kind === 'pdf') {
+    pattern = /^assets\/uploads\/articles\/[A-Za-z0-9._-]+\.pdf$/;
+    message = 'invalid PDF path';
+  } else if (kind === 'html') {
+    pattern = /^data\/articles\/html\/[A-Za-z0-9._-]+\.html$/;
+    message = 'invalid HTML path';
+  } else {
+    pattern = /^assets\/uploads\/articles\/[A-Za-z0-9._-]+\.(png|jpe?g|webp|gif|svg)$/;
+    message = 'invalid cover image path';
   }
+  const text = asText(value, 300);
+  if (text && !pattern.test(text)) throw httpError(400, message);
   return text;
 }
 
@@ -273,12 +283,15 @@ function validateArticlesDoc(input) {
     const date = normalizeDate(article.date);
     const cover = validateArticleUploadPath(article.cover, 'cover');
     const pdf = validateArticleUploadPath(article.pdf, 'pdf');
+    const html = validateArticleUploadPath(article.html, 'html');
     const body = typeof article.body === 'string'
       ? article.body.replace(/\r\n?/g, '\n').slice(0, MAX_ARTICLE_BODY).trim()
       : '';
     const summary = asText(article.summary, 500);
     const sourceName = asText(article.sourceName, 200);
-    const primaryFormat = article.primaryFormat === 'pdf' && pdf ? 'pdf' : 'markdown';
+    let primaryFormat = 'markdown';
+    if (article.primaryFormat === 'pdf' && pdf) primaryFormat = 'pdf';
+    else if (article.primaryFormat === 'html' && html) primaryFormat = 'html';
     const createdAt = /^\d{4}-\d{2}-\d{2}T/.test(String(article.createdAt || '')) ? article.createdAt : now;
 
     return {
@@ -290,6 +303,7 @@ function validateArticlesDoc(input) {
       date,
       cover,
       pdf,
+      html,
       body,
       sourceName,
       primaryFormat,
@@ -525,6 +539,30 @@ async function handleArticlePage(res, slug) {
     res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(renderArticleNotFound(doc));
   }
+  if (article.primaryFormat === 'html' && article.html) {
+    const abs = path.resolve(ROOT, article.html);
+    if (!abs.startsWith(ROOT + path.sep)) {
+      res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      return res.end(renderArticleNotFound(doc));
+    }
+    try {
+      const file = await fsp.readFile(abs);
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        /* the uploaded page is self-contained; sandboxing keeps it away from
+           same-origin storage / admin tokens while still allowing its scripts */
+        'Content-Security-Policy': 'sandbox allow-scripts allow-popups allow-forms allow-modals allow-downloads',
+        'Referrer-Policy': 'no-referrer',
+      });
+      return res.end(file);
+    } catch {
+      res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      return res.end(renderArticleNotFound(doc));
+    }
+  }
+
   const html = renderArticlePage(article, doc);
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(html);
@@ -545,6 +583,25 @@ async function handleArticleDownload(res, slug, suffix) {
       'Cache-Control': 'no-store',
     });
     return res.end(payload);
+  }
+
+  if (suffix === '.html') {
+    if (!article.html) return sendJson(res, 404, { error: 'not found' });
+    const abs = path.resolve(ROOT, article.html);
+    if (!abs.startsWith(ROOT + path.sep)) return sendJson(res, 404, { error: 'not found' });
+    try {
+      const payload = await fsp.readFile(abs);
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Length': payload.length,
+        'Content-Disposition': 'attachment; filename="' + article.slug + '.html"',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+      });
+      return res.end(payload);
+    } catch {
+      return sendJson(res, 404, { error: 'not found' });
+    }
   }
 
   if (!article.pdf) return sendJson(res, 404, { error: 'not found' });
@@ -631,18 +688,19 @@ const server = http.createServer(async (req, res) => {
       if (req.method !== 'POST') return sendJson(res, 405, { error: 'method not allowed' });
       if (!requireAuth(req, res)) return;
       const body = parseJson(await readBody(req, MAX_PDF_BYTES * 1.4 + 1024 * 1024));
-      const kind = body.kind === 'pdf' ? 'pdf' : 'cover';
-      const match = /^data:([\w/+.-]+);base64,([A-Za-z0-9+/=]+)$/i.exec(String(body.data || ''));
+      const kind = body.kind === 'pdf' ? 'pdf' : body.kind === 'html' ? 'html' : 'cover';
+      const match = /^data:([\w/+.-]+)(?:;charset=[\w-]+)?;base64,([A-Za-z0-9+/=]+)$/i.exec(String(body.data || ''));
       if (!match) return sendJson(res, 400, { error: 'invalid upload data' });
 
       const mime = match[1].toLowerCase();
       const ext = ARTICLE_EXTENSIONS[mime];
       if (!ext) return sendJson(res, 400, { error: 'unsupported file type' });
       if (kind === 'pdf' && ext !== 'pdf') return sendJson(res, 400, { error: 'expected a PDF' });
-      if (kind === 'cover' && ext === 'pdf') return sendJson(res, 400, { error: 'expected an image' });
+      if (kind === 'html' && ext !== 'html') return sendJson(res, 400, { error: 'expected an .html file' });
+      if (kind === 'cover' && (ext === 'pdf' || ext === 'html')) return sendJson(res, 400, { error: 'expected an image' });
 
       const bytes = Buffer.from(match[2], 'base64');
-      const limit = kind === 'pdf' ? MAX_PDF_BYTES : MAX_COVER_BYTES;
+      const limit = kind === 'pdf' ? MAX_PDF_BYTES : kind === 'html' ? MAX_HTML_BYTES : MAX_COVER_BYTES;
       if (bytes.length === 0) return sendJson(res, 400, { error: 'empty file' });
       if (bytes.length > limit) {
         return sendJson(res, 413, { error: 'file too large (max ' + Math.round(limit / 1024 / 1024) + ' MB)' });
@@ -650,16 +708,41 @@ const server = http.createServer(async (req, res) => {
       if (kind === 'pdf' && bytes.slice(0, 5).toString('latin1') !== '%PDF-') {
         return sendJson(res, 400, { error: 'file is not a valid PDF' });
       }
+      if (kind === 'html') {
+        const head = bytes.slice(0, 2048).toString('utf8').replace(/^\uFEFF/, '').trimStart().toLowerCase();
+        if (!/^<!doctype\s+html/.test(head) && !/^<html[\s>]/.test(head)) {
+          return sendJson(res, 400, { error: 'file does not look like a standalone HTML document' });
+        }
+      }
 
-      await fsp.mkdir(ARTICLE_UPLOAD_DIR, { recursive: true });
+      const targetDir = kind === 'html' ? ARTICLE_HTML_DIR : ARTICLE_UPLOAD_DIR;
+      const prefix = kind === 'html' ? 'data/articles/html/' : 'assets/uploads/articles/';
+      await fsp.mkdir(targetDir, { recursive: true });
       const base = asSlug(body.filename ? path.parse(String(body.filename)).name : kind, kind);
       const name = base + '-' + crypto.randomBytes(4).toString('hex') + '.' + ext;
-      await fsp.writeFile(path.join(ARTICLE_UPLOAD_DIR, name), bytes);
+      await fsp.writeFile(path.join(targetDir, name), bytes);
       return sendJson(res, 201, {
-        path: 'assets/uploads/articles/' + name,
+        path: prefix + name,
         size: bytes.length,
         kind,
       });
+    }
+
+    if (pathname === '/api/articles/html') {
+      if (req.method !== 'GET') return sendJson(res, 405, { error: 'method not allowed' });
+      if (!requireAuth(req, res)) return;
+      const rel = String(url.searchParams.get('path') || '');
+      if (!/^data\/articles\/html\/[A-Za-z0-9._-]+\.html$/.test(rel)) {
+        return sendJson(res, 400, { error: 'invalid HTML path' });
+      }
+      const abs = path.resolve(ROOT, rel);
+      if (!abs.startsWith(ROOT + path.sep)) return sendJson(res, 400, { error: 'invalid HTML path' });
+      try {
+        const html = await fsp.readFile(abs, 'utf8');
+        return sendJson(res, 200, { path: rel, size: Buffer.byteLength(html, 'utf8'), html });
+      } catch {
+        return sendJson(res, 404, { error: 'not found' });
+      }
     }
 
     if (pathname === '/api/preview') {
@@ -704,7 +787,7 @@ const server = http.createServer(async (req, res) => {
       return res.end();
     }
 
-    const articleMatch = /^\/articles\/([A-Za-z0-9-]+)(\.md|\.pdf)?$/.exec(pathname);
+    const articleMatch = /^\/articles\/([A-Za-z0-9-]+)(\.md|\.pdf|\.html)?$/.exec(pathname);
     if (articleMatch) {
       if (req.method !== 'GET' && req.method !== 'HEAD') {
         return sendJson(res, 405, { error: 'method not allowed' });

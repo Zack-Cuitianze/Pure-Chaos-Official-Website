@@ -353,6 +353,21 @@ a.link:hover { text-decoration: underline; }
 .preview[hidden] { display: none; }
 .preview .article__body { max-width: none; }
 
+.html-preview {
+  margin-top: 14px;
+  border: 0.5px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0b0c12;
+}
+.html-preview iframe {
+  display: block;
+  width: 100%;
+  height: 560px;
+  border: 0;
+  background: #fff;
+}
+
 /* ---------------- responsive ---------------- */
 @media (max-width: 900px) {
   .top { padding: 10px 14px; }

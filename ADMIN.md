@@ -54,8 +54,9 @@ clickable) and `published` (visible and readable).
    fills title/slug/date/summary from it when they are empty. The normalised body
    is previewed in the editor.
 3. **upload cover** (optional) and **upload PDF** (optional).
-4. Pick the **primary format**: only the primary is rendered on the article page;
-   the other format is offered as a download link.
+4. Pick the **primary format**: `markdown`, `pdf`, or a **self-contained HTML
+   file**. Only the primary is rendered on the article page; the other formats
+   are offered as download links.
 5. **save** (whole document, optimistic `revision` check).
 
 Supported Markdown: CommonMark/GFM via vendored `markdown-it` + footnotes + task
@@ -69,9 +70,29 @@ label, `![[embed]]` is removed, callouts become blockquotes, and `%%comments%%`
 are stripped. Plugin-specific syntax (Dataview, Mermaid, etc.) is intentionally
 out of scope and renders as plain text — a separate project will handle it.
 
-The Markdown body is stored inside `data/articles.json`; the PDF and cover stay
-as files under `assets/uploads/articles/`. **Uploaded files are never deleted
+The Markdown body is stored inside `data/articles.json`; PDFs and covers stay
+as files under `assets/uploads/articles/`; self-contained HTML articles live in
+`data/articles/html/`. **Uploaded files are never deleted
 automatically** — deleting an article only removes its JSON entry.
+
+### HTML articles (self-contained)
+
+The third primary format is a **single standalone HTML file** — all CSS and JS
+must live inside that file. When `primaryFormat` is `html`:
+
+- `/articles/<slug>` serves the uploaded file as the **whole page** (the site's
+  nav/footer/styles are not added; the file owns the document).
+- The file is stored under `data/articles/html/` and is never exposed as a
+  plain static file.
+- The response is sandboxed with
+  `Content-Security-Policy: sandbox allow-scripts allow-popups allow-forms allow-modals allow-downloads`.
+  Its scripts run, but it cannot read cookies, `localStorage`/`sessionStorage`, or
+  the admin token, and cannot call the site's API with same-origin credentials.
+- In the admin, the **upload .html** button stores the file, switches the primary
+  format to HTML, and shows a sandboxed preview; **preview** re-renders the saved
+  file. `.html` is also downloadable at `/articles/<slug>.html`.
+- Relative URLs inside the file resolve under `/articles/…`. Inline assets
+  (data URIs), absolute URLs, or no external assets at all are recommended.
 
 ### Public pages
 
@@ -95,6 +116,7 @@ a fallback. PDF content is not rendered on the listing page — only the card.
 | `data/backups/` | timestamped copies of the previous document on every save (last 20 per file, gitignored) |
 | `assets/uploads/` | brand logos |
 | `assets/uploads/articles/` | covers and PDFs |
+| `data/articles/html/` | self-contained HTML article files (served through the sandboxed article route) |
 
 Writes are atomic (`.tmp` + rename) and revision-checked; a conflicting save gets
 `409 conflict`.
@@ -108,13 +130,14 @@ Writes are atomic (`.tmp` + rename) and revision-checked; a conflicting save get
 | GET | `/api/articles` | token for full view | public view excludes drafts and bodies |
 | PUT | `/api/articles` | token | replace articles document |
 | POST | `/api/articles/import` | token | parse uploaded Markdown (`{ filename, text }`) |
-| POST | `/api/articles/upload` | token | upload cover/PDF (`{ kind, filename, data }`) |
+| POST | `/api/articles/upload` | token | upload cover / PDF / HTML (`{ kind, filename, data }`) |
+| GET | `/api/articles/html?path=…` | token | read an uploaded HTML file for the admin preview |
 | POST | `/api/preview` | token | render Markdown preview (`{ markdown }`) |
 | GET | `/api/auth` | token | validate the token |
 | POST | `/api/upload` | token | brand logo upload |
 
-Limits: Markdown import 2 MB, body 512 KB, cover 8 MB, PDF 25 MB, 200 articles,
-40 brands. Uploads are restricted to image types or `application/pdf` (PDF magic
+Limits: Markdown import 2 MB, body 512 KB, cover 8 MB, PDF 25 MB, HTML file
+8 MB, 200 articles, 40 brands. Uploads are restricted to image types or `application/pdf` (PDF magic
 bytes checked).
 
 ## Vendored libraries
@@ -160,5 +183,7 @@ if that Node version is removed.
   `data/backups/` are never served over HTTP.
 - Drafts are not exposed by `/api/articles` unless the request is authenticated.
 - Article HTML comes from the trusted admin, so inline HTML is allowed without a
-  sanitiser; add one before allowing third-party authors.
+  sanitiser; add one before allowing third-party authors. Uploaded standalone
+  HTML pages are additionally sandboxed (opaque origin, no site storage/API
+  access) when served.
 - Uploaded PDFs and covers are validated by type/size but not virus-scanned.
