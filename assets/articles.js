@@ -30,12 +30,23 @@
 
   function render(data) {
     const page = data.page && typeof data.page === 'object' ? data.page : {};
-    if (kickerEl && page.kicker) kickerEl.textContent = page.kicker;
-    if (titleEl && page.title) titleEl.textContent = page.title;
-    if (leadEl && page.lead) leadEl.textContent = page.lead;
+    if (kickerEl && typeof page.kicker === 'string' && page.kicker.trim()) {
+      kickerEl.textContent = page.kicker;
+    }
+    if (titleEl && typeof page.title === 'string' && page.title.trim()) {
+      titleEl.textContent = page.title;
+    }
+
+    /* Empty fields must clear the static fallback, not leave it in place. */
+    if (leadEl) {
+      const lead = typeof page.lead === 'string' ? page.lead.trim() : '';
+      leadEl.textContent = lead;
+      leadEl.hidden = !lead;
+    }
     if (noteEl) {
-      if (page.note) noteEl.textContent = page.note;
-      else noteEl.hidden = true;
+      const note = typeof page.note === 'string' ? page.note.trim() : '';
+      noteEl.textContent = note;
+      noteEl.hidden = !note;
     }
 
     const articles = (Array.isArray(data.articles) ? data.articles : [])
