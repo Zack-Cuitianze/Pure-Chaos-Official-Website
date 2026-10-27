@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{TITLE}}</title>
+<meta name="description" content="{{DESCRIPTION}}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{TITLE}}">
+<meta property="og:description" content="{{DESCRIPTION}}">
+<meta name="theme-color" content="#050508">
+<meta name="apple-mobile-web-app-title" content="Pure Chaos">
+<link rel="icon" href="/assets/logo.svg" type="image/svg+xml">
+<link rel="preload" href="/assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/styles.css">
+<link rel="stylesheet" href="/assets/articles.css">
+</head>
+<body>
+
+<div class="ambient" aria-hidden="true"></div>
+
+<header class="nav" role="banner">
+  <div class="nav__inner">
+    <a class="brand" href="/index.html" aria-label="Pure Chaos — home">
+      <img class="brand__mark" src="/assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a class="glass-btn" href="/brands.html"><span>brands</span></a>
+      <a class="glass-btn" href="/about.html"><span>about us</span></a>
+      <a class="glass-btn" href="/articles.html" aria-current="page"><span>articles</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="page article">
+  <p class="page__kicker">{{KICKER}}</p>
+  <h1 class="page__title article__title">{{ARTICLE_TITLE}}</h1>
+  <p class="article__meta">{{META_LINE}}</p>
+  {{COVER}}
+  {{CONTENT}}
+  <p class="article__back"><a href="/articles.html">← All articles</a></p>
+</main>
+
+<footer class="footer" role="contentinfo">
+  <div class="footer__inner">
+    <a class="footer__brand" href="/index.html" aria-label="Pure Chaos — home">
+      <img src="/assets/logo.svg" alt="Pure Chaos" width="192" height="50">
+    </a>
+    <nav class="footer__cols" aria-label="Footer">
+      <ul class="footer__col">
+        <li><a href="#">Privacy policies</a></li>
+        <li><a href="#">Do not share my personal data</a></li>
+        <li><a href="#">Collaborations</a></li>
+        <li><a href="#">We care about your well-being</a></li>
+        <li><a href="#">Cookies</a></li>
+        <li><a href="#">Terms of use</a></li>
+        <li><a href="#">Sitemap</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Contact us</a></li>
+      </ul>
+      <ul class="footer__col">
+        <li><a href="#">Assets free for downloading</a></li>
+        <li><a href="#">Members of the club</a></li>
+        <li><a href="#">External links</a></li>
+        <li><a href="#">Contributors</a></li>
+      </ul>
+    </nav>
+    <a class="footer__game" href="/games.html"><span class="game__fx" aria-hidden="true"><span class="game__invader"></span><span class="game__coin">INSERT COIN</span></span><span class="game__label">Game center <span class="game__arrow">-&gt;</span></span></a>
+  </div>
+</footer>
+
+<script src="/assets/interaction.js" defer></script>
+<script src="/assets/article.js" defer></script>
+
+</body>
+</html>

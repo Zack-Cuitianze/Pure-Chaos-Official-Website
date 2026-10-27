@@ -12,6 +12,7 @@
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
 <link rel="preload" href="assets/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/articles.css">
 </head>
 <body>
 
@@ -39,18 +40,27 @@
   <h1 class="page__title">Notes, build logs and the occasional opinion.</h1>
   <p class="page__lead">Long-form thinking and short field reports from inside the studio. Nothing is published yet — these are the first three in the queue.</p>
 
-  <div class="entries">
-    <article class="entry entry--soon">
-      <h2 class="entry__title">One page, one sentence</h2>
-      <p class="entry__meta">In the works</p>
+  <div class="articles-grid" id="articlesGrid">
+    <article class="article-card article-card--soon">
+      <div class="article-card__media article-card__media--empty"><span class="article-card__placeholder">In the works</span></div>
+      <div class="article-card__body">
+        <div class="article-card__meta"><span>In the works</span><span class="article-card__flag">Soon</span></div>
+        <h2 class="article-card__title">One page, one sentence</h2>
+      </div>
     </article>
-    <article class="entry entry--soon">
-      <h2 class="entry__title">Why the footer bleeds off the page</h2>
-      <p class="entry__meta">In the works</p>
+    <article class="article-card article-card--soon">
+      <div class="article-card__media article-card__media--empty"><span class="article-card__placeholder">In the works</span></div>
+      <div class="article-card__body">
+        <div class="article-card__meta"><span>In the works</span><span class="article-card__flag">Soon</span></div>
+        <h2 class="article-card__title">Why the footer bleeds off the page</h2>
+      </div>
     </article>
-    <article class="entry entry--soon">
-      <h2 class="entry__title">Three voices, one brand system</h2>
-      <p class="entry__meta">In the works</p>
+    <article class="article-card article-card--soon">
+      <div class="article-card__media article-card__media--empty"><span class="article-card__placeholder">In the works</span></div>
+      <div class="article-card__body">
+        <div class="article-card__meta"><span>In the works</span><span class="article-card__flag">Soon</span></div>
+        <h2 class="article-card__title">Three voices, one brand system</h2>
+      </div>
     </article>
   </div>
 
@@ -84,6 +94,8 @@
     <a class="footer__game" href="games.html"><span class="game__fx" aria-hidden="true"><span class="game__invader"></span><span class="game__coin">INSERT COIN</span></span><span class="game__label">Game center <span class="game__arrow">-&gt;</span></span></a>
   </div>
 </footer>
+
+<script src="assets/articles.js" defer></script>
 
 </body>
 </html>

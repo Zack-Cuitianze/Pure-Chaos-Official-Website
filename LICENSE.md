@@ -10,14 +10,14 @@ different terms; this file explains which applies where.
 
 ## 1. At a glance
 
-| Material | Terms |
-| --- | --- |
+| Material                                        | Terms                                              |
+| ----------------------------------------------- | -------------------------------------------------- |
 | Website source code (`*.html`, `*.css`, `*.js`) | All rights reserved — view/reference only (see §2) |
-| Brand, logo, wordmark, name, visual identity | All rights reserved — trademark, no reuse (see §3) |
-| Written content, copy, articles, documentation | All rights reserved (see §3) |
-| Background photograph | Unsplash License (see §4) |
-| Fonts (Geist, Press Start 2P, VT323) | SIL Open Font License 1.1 (see §4) |
-| Contributions (human or AI-assisted) | Inbound license to the project (see §5) |
+| Brand, logo, wordmark, name, visual identity    | All rights reserved — trademark, no reuse (see §3) |
+| Written content, copy, articles, documentation  | All rights reserved (see §3)                       |
+| Background photograph                           | Unsplash License (see §4)                          |
+| Fonts (Geist, Press Start 2P, VT323)            | SIL Open Font License 1.1 (see §4)                 |
+| Contributions (human or AI-assisted)            | Inbound license to the project (see §5)            |
 
 ## 2. Website source code
 
@@ -66,6 +66,21 @@ take precedence over the terms above for those assets.
   Full license text: `assets/fonts/OFL-PressStart2P.txt`.
 - **VT323** — © The VT323 Project Authors, SIL OFL 1.1.
   Full license text: `assets/fonts/OFL-VT323.txt`.
+
+### Article rendering and PDF viewing
+
+- **Mozilla PDF.js** v6.4.299 — © Mozilla Foundation and contributors,
+  licensed under the Apache License, Version 2.0. Vendored at
+  `assets/vendor/pdfjs/`; its full license is in
+  `assets/vendor/pdfjs/LICENSE`. The bundled WASM decoders keep their own
+  licenses in `assets/vendor/pdfjs/web/wasm/` (JBIG2, OpenJPEG, QCMS).
+- **markdown-it** v15.0.3 — © the markdown-it authors, MIT. Vendored at
+  `assets/vendor/markdown-it/`; license in
+  `assets/vendor/markdown-it/LICENSE-markdown-it`.
+- **markdown-it-footnote** v4.0.0 — MIT. License in
+  `assets/vendor/markdown-it/LICENSE-markdown-it-footnote`.
+- **markdown-it-task-lists** v2.1.1 — ISC. License in
+  `assets/vendor/markdown-it/LICENSE-markdown-it-task-lists`.
 
 ### Background photograph
 
@@ -130,7 +145,7 @@ the brand, or commercial collaboration — ask first:
 This file is maintained by the project owner. It may be updated from time to
 time; the latest version in this repository applies.
 
-_Last updated: 2026-10-24._
+_Last updated: 2026-10-27._
 
 > This document is a plain-language statement of the project's terms. It is not
 > legal advice. If it conflicts with a separately signed written agreement,

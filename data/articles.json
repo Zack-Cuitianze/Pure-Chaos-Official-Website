@@ -1,0 +1,57 @@
+{
+  "revision": 1,
+  "updatedAt": "2026-10-27T10:00:00.000Z",
+  "page": {
+    "kicker": "Articles",
+    "title": "Notes, build logs and the occasional opinion.",
+    "lead": "Long-form thinking and short field reports from inside the studio. Nothing is published yet — these are the first three in the queue.",
+    "note": "The first dispatch lands here. Follow the brands page in the meantime."
+  },
+  "articles": [
+    {
+      "id": "one-page-one-sentence",
+      "slug": "one-page-one-sentence",
+      "title": "One page, one sentence",
+      "summary": "",
+      "status": "in-the-works",
+      "date": "",
+      "cover": "",
+      "pdf": "",
+      "body": "",
+      "sourceName": "",
+      "primaryFormat": "markdown",
+      "createdAt": "2026-10-17T09:26:00.000Z",
+      "updatedAt": "2026-10-17T09:26:00.000Z"
+    },
+    {
+      "id": "why-the-footer-bleeds-off-the-page",
+      "slug": "why-the-footer-bleeds-off-the-page",
+      "title": "Why the footer bleeds off the page",
+      "summary": "",
+      "status": "in-the-works",
+      "date": "",
+      "cover": "",
+      "pdf": "",
+      "body": "",
+      "sourceName": "",
+      "primaryFormat": "markdown",
+      "createdAt": "2026-10-17T09:26:00.000Z",
+      "updatedAt": "2026-10-17T09:26:00.000Z"
+    },
+    {
+      "id": "three-voices-one-brand-system",
+      "slug": "three-voices-one-brand-system",
+      "title": "Three voices, one brand system",
+      "summary": "",
+      "status": "in-the-works",
+      "date": "",
+      "cover": "",
+      "pdf": "",
+      "body": "",
+      "sourceName": "",
+      "primaryFormat": "markdown",
+      "createdAt": "2026-10-17T09:26:00.000Z",
+      "updatedAt": "2026-10-17T09:26:00.000Z"
+    }
+  ]
+}
