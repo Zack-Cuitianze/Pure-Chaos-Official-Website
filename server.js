@@ -289,9 +289,21 @@ function validateArticlesDoc(input) {
       : '';
     const summary = asText(article.summary, 500);
     const sourceName = asText(article.sourceName, 200);
-    let primaryFormat = 'markdown';
-    if (article.primaryFormat === 'pdf' && pdf) primaryFormat = 'pdf';
-    else if (article.primaryFormat === 'html' && html) primaryFormat = 'html';
+    const primaryFormat = ['markdown', 'pdf', 'html'].includes(article.primaryFormat)
+      ? article.primaryFormat
+      : 'markdown';
+
+    if (status === 'published') {
+      if (primaryFormat === 'pdf' && !pdf) {
+        throw httpError(400, 'published article "' + title + '" needs a PDF file');
+      }
+      if (primaryFormat === 'html' && !html) {
+        throw httpError(400, 'published article "' + title + '" needs an HTML file');
+      }
+      if (primaryFormat === 'markdown' && !body) {
+        throw httpError(400, 'published article "' + title + '" needs a Markdown body');
+      }
+    }
     const createdAt = /^\d{4}-\d{2}-\d{2}T/.test(String(article.createdAt || '')) ? article.createdAt : now;
 
     return {

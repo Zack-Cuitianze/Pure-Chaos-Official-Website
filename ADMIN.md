@@ -55,8 +55,10 @@ clickable) and `published` (visible and readable).
    is previewed in the editor.
 3. **upload cover** (optional) and **upload PDF** (optional).
 4. Pick the **primary format**: `markdown`, `pdf`, or a **self-contained HTML
-   file**. Only the primary is rendered on the article page; the other formats
-   are offered as download links.
+   file**. All three can be selected at any time; content is only required once
+   the article is **published** — a published article must have a Markdown body,
+   a PDF file, or an HTML file for its chosen primary format. Only the primary is
+   rendered on the article page; the other formats are offered as download links.
 5. **save** (whole document, optimistic `revision` check).
 
 Supported Markdown: CommonMark/GFM via vendored `markdown-it` + footnotes + task

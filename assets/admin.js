@@ -759,13 +759,6 @@
       radio.addEventListener('change', () => {
         const article = findArticle(state.activeArticleId);
         if (!article || !radio.checked) return;
-        if (radio.value === 'html' && !article.html) {
-          setStatus('upload an HTML file first', 'error');
-          $$('input[name="aPrimary"]').forEach((item) => {
-            item.checked = item.value === article.primaryFormat;
-          });
-          return;
-        }
         article.primaryFormat = radio.value;
         markDirty('articles');
       });
@@ -998,11 +991,17 @@
   async function saveAll() {
     if (state.busy || !anyDirty()) return;
     if (state.dirty.articles) {
-      const broken = state.articles.articles.find(
-        (article) => article.primaryFormat === 'html' && !article.html
-      );
+      const broken = state.articles.articles.find((article) => {
+        if (article.status !== 'published') return false;
+        if (article.primaryFormat === 'html') return !article.html;
+        if (article.primaryFormat === 'pdf') return !article.pdf;
+        return !article.body;
+      });
       if (broken) {
-        setStatus('article "' + (broken.title || 'untitled') + '" needs an HTML file', 'error');
+        const needs = broken.primaryFormat === 'html' ? 'an HTML file'
+          : broken.primaryFormat === 'pdf' ? 'a PDF file'
+          : 'a Markdown body';
+        setStatus('published article "' + (broken.title || 'untitled') + '" needs ' + needs, 'error');
         return;
       }
     }
